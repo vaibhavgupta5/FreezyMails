@@ -5,17 +5,18 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 const accountSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   fromName: z.string().min(1, 'From Name is required'),
   fromEmail: z.string().email('Invalid email'),
   smtpHost: z.string().min(1, 'SMTP Host is required'),
-  smtpPort: z.coerce.number().min(1),
+  smtpPort: z.number().min(1),
   smtpUser: z.string().min(1, 'SMTP User is required'),
   smtpPass: z.string().min(1, 'SMTP Pass is required'),
   imapHost: z.string().min(1, 'IMAP Host is required'),
-  imapPort: z.coerce.number().min(1),
+  imapPort: z.number().min(1),
   imapUser: z.string().min(1, 'IMAP User is required'),
   imapPass: z.string().min(1, 'IMAP Pass is required'),
 })
@@ -48,8 +49,8 @@ export default function AccountForm() {
       })
       const data = await res.json()
       setTestResult(data)
-    } catch (err: any) {
-      setTestResult({ ok: false, error: err.message })
+    } catch (err: unknown) {
+      setTestResult({ ok: false, error: err instanceof Error ? err.message : 'Unknown error' })
     } finally {
       setTesting(false)
     }
@@ -64,9 +65,10 @@ export default function AccountForm() {
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to save account')
+      toast.success('Account connected successfully!')
       router.refresh()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save account')
     } finally {
       setSaving(false)
     }
@@ -138,7 +140,7 @@ export default function AccountForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Port</label>
-                <input type="number" {...register('smtpPort')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <input type="number" {...register('smtpPort', { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded p-2" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">User</label>
@@ -160,7 +162,7 @@ export default function AccountForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Port</label>
-                <input type="number" {...register('imapPort')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <input type="number" {...register('imapPort', { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded p-2" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">User</label>

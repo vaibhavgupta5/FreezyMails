@@ -25,6 +25,7 @@ export async function GET(request: Request) {
       take: limit,
       include: {
         campaign: { select: { name: true } },
+        recipient: { select: { email: true, dynamicData: true } }
       }
     }),
     prisma.reply.count({

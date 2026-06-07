@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 
-export default function CampaignStatsTable({ data }: { data: any[] }) {
+import { CampaignStatRow } from '@/types'
+
+export default function CampaignStatsTable({ data }: { data: CampaignStatRow[] }) {
   const [sortField, setSortField] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 

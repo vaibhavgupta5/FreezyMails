@@ -3,8 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientBrowser } from '@/lib/supabase-client'
+import toast from 'react-hot-toast'
 
-export default function SettingsForm({ user, accounts }: { user: any, accounts: any[] }) {
+import { EmailAccount, User } from '@prisma/client'
+
+export default function SettingsForm({ user, accounts }: { user: User, accounts: EmailAccount[] }) {
   const router = useRouter()
   const [name, setName] = useState(user.name || '')
   const [defaultAccountId, setDefaultAccountId] = useState(user.defaultAccountId || '')
@@ -15,11 +18,16 @@ export default function SettingsForm({ user, accounts }: { user: any, accounts: 
 
   const handleSaveProfile = async () => {
     setLoading(true)
-    await fetch('/api/user', {
+    const res = await fetch('/api/user', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, defaultAccountId })
     })
+    if (res.ok) {
+      toast.success('Settings saved successfully!')
+    } else {
+      toast.error('Failed to save settings')
+    }
     setLoading(false)
   }
 
@@ -32,9 +40,9 @@ export default function SettingsForm({ user, accounts }: { user: any, accounts: 
     })
     if (res.ok) {
       setCampaignConfirm('')
-      alert('All campaigns deleted')
+      toast.success('All campaigns deleted')
     } else {
-      alert('Failed to delete campaigns')
+      toast.error('Failed to delete campaigns')
     }
     setLoading(false)
   }
@@ -47,11 +55,12 @@ export default function SettingsForm({ user, accounts }: { user: any, accounts: 
       body: JSON.stringify({ action: 'delete_account', confirmation: accountConfirm })
     })
     if (res.ok) {
+      toast.success('Account deleted successfully')
       const supabase = createClientBrowser()
       await supabase.auth.signOut()
       router.push('/login')
     } else {
-      alert('Failed to delete account')
+      toast.error('Failed to delete account')
     }
     setLoading(false)
   }

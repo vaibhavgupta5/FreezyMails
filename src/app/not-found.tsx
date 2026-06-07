@@ -1,19 +1,33 @@
 import Link from 'next/link'
-import { HelpCircle, ArrowLeft } from 'lucide-react'
+import { HelpCircle, ArrowLeft, Snowflake } from 'lucide-react'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-200 relative overflow-hidden p-4">
-      {/* Decorative background elements */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-ice-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-ice-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
-      
-      <div className="relative z-10 max-w-lg w-full">
+    <div className="min-h-screen flex flex-col bg-surface-200 relative overflow-hidden">
+      {/* Navbar */}
+      <nav className="relative z-20 flex justify-between items-center px-8 py-6 w-full max-w-7xl mx-auto">
+        <div className="flex items-center gap-2">
+          <Snowflake className="text-ice-500 shrink-0" size={32} />
+          <span className="text-2xl font-medium text-surface-900 drop-shadow-sm truncate">
+            freezy<span className="text-ice-900 font-bold">Mails</span>
+          </span>
+        </div>
+        <div className="flex gap-4">
+          <Link href="/" className="skeu-btn-ghost font-medium">
+            Back to Home
+          </Link>
+        </div>
+      </nav>
+
+      <div className="flex-1 flex items-center justify-center p-4">
+        {/* Decorative background elements */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-ice-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-ice-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        <div className="relative z-10 max-w-lg w-full">
         <div className="skeu-card p-12 text-center flex flex-col items-center border border-surface-300 backdrop-blur-sm bg-surface-50/80 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.8)] rounded-3xl">
           
-          <div className="w-24 h-24 mb-6 rounded-2xl bg-gradient-to-br from-ice-100 to-ice-300 shadow-skeu-raised flex items-center justify-center transform -rotate-6 hover:rotate-0 transition-transform duration-300">
-            <HelpCircle size={48} className="text-ice-700" />
-          </div>
+         
           
           <h1 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-ice-600 to-ice-900 mb-2 drop-shadow-sm">
             404
@@ -24,7 +38,7 @@ export default function NotFound() {
           </h2>
           
           <p className="text-surface-600 mb-8 leading-relaxed max-w-xs mx-auto">
-            We couldn't find the page you're looking for. It might have been moved, deleted, or perhaps never existed.
+            {"We couldn't find the page you're looking for. It might have been moved, deleted, or perhaps never existed."}
           </p>
           
           <Link 
@@ -38,6 +52,7 @@ export default function NotFound() {
           <div className="mt-8 pt-6 border-t border-surface-300/50 w-full">
             <p className="text-xs text-surface-500 font-medium">FreezyMails</p>
           </div>
+        </div>
         </div>
       </div>
     </div>

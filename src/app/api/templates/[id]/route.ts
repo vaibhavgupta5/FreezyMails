@@ -9,12 +9,13 @@ const templateSchema = z.object({
   body: z.string().min(1, 'Body is required'),
 })
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const user = await getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const template = await prisma.template.findUnique({
-    where: { id: params.id }
+    where: { id }
   })
 
   if (!template || template.userId !== user.id) {
@@ -24,7 +25,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   return NextResponse.json(template)
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const user = await getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -40,7 +42,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const variables = Array.from(new Set([...subjectVars, ...bodyVars]))
 
     const template = await prisma.template.update({
-      where: { id: params.id, userId: user.id },
+      where: { id, userId: user.id },
       data: {
         name: data.name,
         subject: data.subject,
@@ -50,24 +52,27 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     })
 
     return NextResponse.json(template)
-  } catch (err: any) {
-    if (err.code === 'P2025') {
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string };
+    if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
-    return NextResponse.json({ error: err.message }, { status: 400 })
+    return NextResponse.json({ error: error.message || 'An error occurred' }, { status: 400 })
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const user = await getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     await prisma.template.delete({
-      where: { id: params.id, userId: user.id }
+      where: { id, userId: user.id }
     })
-    return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Failed to delete or not found' }, { status: 400 })
+    return NextResponse.json({ success: true }) 
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string };
+    return NextResponse.json({ error: error.message || 'Failed to delete or not found' }, { status: 400 })
   }
 }

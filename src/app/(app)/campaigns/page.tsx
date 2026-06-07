@@ -14,7 +14,7 @@ export default async function CampaignsPage() {
   })
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Campaigns</h1>
         <Link href="/campaigns/new" className="skeu-btn-primary">New Campaign</Link>

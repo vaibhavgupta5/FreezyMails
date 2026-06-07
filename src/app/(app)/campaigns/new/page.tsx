@@ -4,27 +4,23 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { validateRecipientList } from '@/lib/validate'
 import { AlertTriangle, Check, Trash2, Plus, Type, Table as TableIcon } from 'lucide-react'
+import PageSkeleton from '../../_components/PageSkeleton'
+import { useCampaignStore } from '@/stores/useCampaignStore'
 
 export default function NewCampaignPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
-  const [inputMode, setInputMode] = useState<'paste' | 'table'>('table')
-  
-  // Form State
-  const [name, setName] = useState('')
-  const [templateId, setTemplateId] = useState('')
-  const [accountId, setAccountId] = useState('')
-  const [recipientsText, setRecipientsText] = useState('') // CSV string for simplicity
-  
+  const { 
+    step, setStep, 
+    inputMode, setInputMode, 
+    name, templateId, accountId, setDetails,
+    recipientsText, setRecipientsText,
+    parsedRecipients, validationErrors, isValid, globalError,
+    resetDraft
+  } = useCampaignStore()
+
   const [templates, setTemplates] = useState<any[]>([])
   const [accounts, setAccounts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Validation State
-  const [parsedRecipients, setParsedRecipients] = useState<any[]>([])
-  const [validationErrors, setValidationErrors] = useState<Record<number, string[]>>({})
-  const [isValid, setIsValid] = useState(false)
-  const [globalError, setGlobalError] = useState('')
 
   const selectedTemplate = templates.find(t => t.id === templateId)
   const requiredHeaders = selectedTemplate ? ['email', ...(selectedTemplate.variables || [])] : ['email']
@@ -40,71 +36,7 @@ export default function NewCampaignPage() {
     })
   }, [])
 
-  useEffect(() => {
-    // Debounce validation
-    const timer = setTimeout(() => {
-      if (!recipientsText.trim()) {
-        setParsedRecipients([])
-        setValidationErrors({})
-        setIsValid(false)
-        return
-      }
-
-      // Smart Parse (CSV or TSV for Excel copy-paste)
-      let lines = recipientsText.split('\n').filter(l => l.trim())
-      if (lines.length === 0) {
-        setParsedRecipients([])
-        setValidationErrors({})
-        setIsValid(false)
-        return
-      }
-
-      // If they accidentally pasted the header row from Excel, ignore it!
-      if (lines[0].toLowerCase().startsWith('email')) {
-        lines = lines.slice(1)
-      }
-
-      if (lines.length === 0) {
-        setParsedRecipients([])
-        setValidationErrors({ '-1': ['Please paste at least one data row'] })
-        setIsValid(false)
-        return
-      }
-
-      // Auto-detect delimiter (Excel copy-paste uses tabs)
-      const delimiter = lines[0].includes('\t') ? '\t' : ','
-      
-      const rows = lines.map(line => {
-        const vals = line.split(delimiter).map(v => v.trim())
-        const obj: any = {}
-        requiredHeaders.forEach((h, i) => {
-          obj[h] = vals[i] || ''
-        })
-        return obj
-      })
-
-      setParsedRecipients(rows)
-
-      const selectedTemplate = templates.find(t => t.id === templateId)
-      const variables = selectedTemplate?.variables || []
-      
-      const { valid, errors } = validateRecipientList(rows, variables)
-      setValidationErrors(errors)
-      setIsValid(valid)
-      
-      if (errors['-1']) {
-        setGlobalError(errors['-1'].join(', '))
-      } else {
-        const errCount = Object.keys(errors).length
-        setGlobalError(errCount > 0 ? `${errCount} rows have errors` : '')
-      }
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [recipientsText, templateId, templates])
-
   const getTableRows = () => {
-    // Split by newline and keep lines that contain tabs (representing empty rows in the table)
     let lines = recipientsText.split('\n').filter(l => l !== '')
     if (lines.length > 0 && lines[0].toLowerCase().startsWith('email')) lines = lines.slice(1)
     if (lines.length === 0) return [{}]
@@ -124,21 +56,21 @@ export default function NewCampaignPage() {
     const rows = getTableRows()
     rows[rowIndex][header] = value
     const newText = rows.map(r => requiredHeaders.map(h => r[h] || '').join('\t')).join('\n')
-    setRecipientsText(newText)
+    setRecipientsText(newText, templates)
   }
 
   const handleAddRow = () => {
     const rows = getTableRows()
     rows.push({})
     const newText = rows.map(r => requiredHeaders.map(h => r[h] || '').join('\t')).join('\n')
-    setRecipientsText(newText)
+    setRecipientsText(newText, templates)
   }
 
   const handleRemoveRow = (rowIndex: number) => {
     const rows = getTableRows()
     rows.splice(rowIndex, 1)
     const newText = rows.map(r => requiredHeaders.map(h => r[h] || '').join('\t')).join('\n')
-    setRecipientsText(newText)
+    setRecipientsText(newText, templates)
   }
 
   const handleCreate = async () => {
@@ -157,11 +89,12 @@ export default function NewCampaignPage() {
 
     if (res.ok) {
       const { id } = await res.json()
+      resetDraft()
       router.push(`/campaigns/${id}`)
     }
   }
 
-  if (loading) return <div className="p-8">Loading...</div>
+  if (loading) return <PageSkeleton />
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
@@ -176,18 +109,18 @@ export default function NewCampaignPage() {
         <div className="skeu-card space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Campaign Name</label>
-            <input className="skeu-input" value={name} onChange={e => setName(e.target.value)} placeholder="Q3 Outreach" />
+            <input className="skeu-input" value={name} onChange={e => setDetails(e.target.value, templateId, accountId)} placeholder="Q3 Outreach" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email Account</label>
-            <select className="skeu-select" value={accountId} onChange={e => setAccountId(e.target.value)}>
+            <select className="skeu-select" value={accountId} onChange={e => setDetails(name, templateId, e.target.value)}>
               <option value="">Select Account</option>
               {accounts.map(a => <option key={a.id} value={a.id}>{a.label} ({a.fromEmail})</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Template</label>
-            <select className="skeu-select" value={templateId} onChange={e => setTemplateId(e.target.value)}>
+            <select className="skeu-select" value={templateId} onChange={e => setDetails(name, e.target.value, accountId)}>
               <option value="">Select Template</option>
               {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
@@ -237,10 +170,10 @@ export default function NewCampaignPage() {
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={() => setRecipientsText('')} 
-                className="text-xs text-red-500 hover:text-red-700 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition mt-1"
-              >
+                <button 
+                  onClick={() => setRecipientsText('', templates)} 
+                  className="text-xs text-red-500 hover:text-red-700 font-medium px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition mt-1"
+                >
                 Clear Data
               </button>
             </div>
@@ -250,7 +183,7 @@ export default function NewCampaignPage() {
                 className="skeu-textarea w-full font-mono text-sm whitespace-pre" 
                 rows={10}
                 value={recipientsText} 
-                onChange={e => setRecipientsText(e.target.value)} 
+                onChange={e => setRecipientsText(e.target.value, templates)} 
                 placeholder="john@example.com&#9;John&#9;Acme Corp&#10;sarah@example.com&#9;Sarah&#9;Globex"
               />
             ) : (

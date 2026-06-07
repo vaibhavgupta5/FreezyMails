@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 const templateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -48,10 +49,13 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
         const errorData = await res.json()
         throw new Error(errorData.error || 'Failed to save template')
       }
+      toast.success(initialData ? 'Template updated successfully!' : 'Template created successfully!')
       router.push('/templates')
       router.refresh()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save template'
+      setError(errorMessage)
+      toast.error(errorMessage)
       setSaving(false)
     }
   }

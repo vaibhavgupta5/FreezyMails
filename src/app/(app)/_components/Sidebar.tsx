@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+
 import {
   Snowflake,
   LogOut,
@@ -16,10 +16,9 @@ import {
   Server,
   ChevronLeft,
   ChevronRight,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { createClientBrowser } from "@/lib/supabase-client";
+import { useInboxStore } from "@/stores/useInboxStore";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -31,15 +30,19 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({ user }: { user: any }) {
+import { User } from "@supabase/supabase-js";
+
+export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClientBrowser();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  const { unreadCount, fetchReplies } = useInboxStore();
+
+  useEffect(() => {
+    fetchReplies();
+  }, [fetchReplies]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -47,60 +50,89 @@ export default function Sidebar({ user }: { user: any }) {
   };
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-64"} skeu-sidebar flex flex-col min-h-screen transition-all duration-300 relative`}>
+    <div
+      className={`${isCollapsed ? "w-20" : "w-64"} skeu-sidebar h-screen transition-all duration-300 relative shrink-0`}
+    >
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-5 bg-surface-100 border border-surface-400 rounded-full p-1 shadow-skeu-raised hover:bg-surface-50 text-surface-600 transition-colors z-50"
+        className="absolute -right-3 top-5 bg-surface-100 border border-surface-400 rounded-full p-1 shadow-skeu-raised hover:bg-surface-50 text-surface-600 transition-colors z-[100] cursor-pointer"
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      <div className={`h-16 flex items-center border-b border-surface-400 gap-2 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
-        <Snowflake className="text-ice-500 shrink-0" size={24} />
-        {!isCollapsed && <h1 className="text-xl font-medium text-surface-900 truncate">FreezyMails</h1>}
-      </div>
-
-      <nav className={`flex-1 p-4 space-y-1 overflow-hidden ${isCollapsed ? 'px-2' : ''}`}>
-        {navItems.map((item) => {
-          const active =
-            pathname.startsWith(item.href) &&
-            (item.href !== "/dashboard" || pathname === "/dashboard");
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`skeu-nav-item ${active ? "active" : ""} ${isCollapsed ? "justify-center px-0 py-3" : ""}`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Icon size={isCollapsed ? 20 : 18} className="shrink-0" />
-              {!isCollapsed && <span className="truncate">{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className={`p-4 border-t border-surface-400 flex flex-col gap-3 ${isCollapsed ? 'items-center px-2' : ''}`}>
-        <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-2'}`}>
-          <div className="w-8 h-8 rounded-full bg-ice-100 flex items-center justify-center text-ice-700 font-bold shadow-skeu-inset shrink-0">
-            {user.email.charAt(0).toUpperCase()}
-          </div>
+      <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden">
+        <div
+          className={`h-16 flex items-center border-b border-surface-400 gap-2 ${isCollapsed ? "justify-center px-0" : "px-6"}`}
+        >
+          <Snowflake className="text-ice-500 shrink-0" size={24} />
           {!isCollapsed && (
-            <div className="text-sm text-surface-900 truncate font-medium">
-              {user.user_metadata?.full_name || user.email}
-            </div>
+            <h1 className="text-xl font-medium text-surface-900 truncate">
+              freezy<span className="text-ice-900 font-bold ">Mails</span>
+            </h1>
           )}
         </div>
-        
-        <div className={`flex ${isCollapsed ? 'flex-col' : ''} gap-2 w-full`}>
-          <button
-            onClick={handleSignOut}
-            className={`flex items-center justify-center gap-2 p-1.5 text-sm text-surface-600 hover:text-red-600 transition-colors rounded-lg hover:bg-surface-100 ${!isCollapsed && 'flex-1 border border-surface-300'}`}
-            title="Sign Out"
+
+        <nav className={`flex-1 p-4 space-y-1 ${isCollapsed ? "px-2" : ""}`}>
+          {navItems.map((item) => {
+            const active =
+              pathname.startsWith(item.href) &&
+              (item.href !== "/dashboard" || pathname === "/dashboard");
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`skeu-nav-item flex items-center justify-between ${active ? "active" : ""} ${isCollapsed ? "justify-center px-0 py-3" : ""}`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon size={isCollapsed ? 20 : 18} className="shrink-0 " />
+                  {!isCollapsed && (
+                    <span className="truncate">{item.label}</span>
+                  )}
+                </div>
+                {!isCollapsed && item.href === "/inbox" && unreadCount > 0 && (
+                  <span className="bg-ice-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    {unreadCount}
+                  </span>
+                )}
+                {isCollapsed && item.href === "/inbox" && unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-ice-500 rounded-full"></span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div
+          className={`p-4 border-t border-surface-400 flex flex-col gap-3 ${isCollapsed ? "items-center px-2" : ""}`}
+        >
+          <div
+            className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : "px-2"} cursor-pointer`}
+            onClick={() => {
+              router.push("/settings");
+            }}
           >
-            <LogOut size={16} />
-            {!isCollapsed && <span>Sign Out</span>}
-          </button>
+            <div className="w-8 h-8 rounded-full bg-ice-100 flex items-center justify-center text-ice-700 font-bold shadow-skeu-inset shrink-0">
+              {(user.email || "U").charAt(0).toUpperCase()}
+            </div>
+            {!isCollapsed && (
+              <div className="text-sm text-surface-900 truncate font-medium">
+                {user.user_metadata?.full_name || user.email}
+              </div>
+            )}
+          </div>
+
+          <div className={`flex ${isCollapsed ? "flex-col" : ""} gap-2 w-full`}>
+            <button
+              onClick={handleSignOut}
+              className={`flex items-center justify-center gap-2 p-1.5 text-sm text-surface-200 hover:text-red-600 transition-colors cursor-pointer rounded-lg hover:bg-surface-100 ${!isCollapsed && "flex-1 border border-surface-300"}`}
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+              {!isCollapsed && <span>Sign Out</span>}
+            </button>
+          </div>
         </div>
       </div>
     </div>

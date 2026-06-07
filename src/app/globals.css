@@ -162,6 +162,10 @@
   .skeu-stat-card .sub {
     @apply text-xs text-surface-600 mt-0.5;
   }
+
+  .button {
+    cursor: pointer;
+  }
   
   .skeu-textarea {
     @apply w-full bg-surface-50 border border-surface-400 rounded-lg px-3 py-2 text-sm text-surface-900 shadow-skeu-inset focus:outline-none focus:border-ice-500 focus:ring-1 focus:ring-ice-300 placeholder:text-surface-400 min-h-[120px] resize-y;

@@ -1,34 +1,38 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import PageSkeleton from '../../_components/PageSkeleton'
 import { useParams } from 'next/navigation'
+import toast from 'react-hot-toast'
+import { useInboxStore } from '@/stores/useInboxStore'
 
 export default function ReplyPage() {
   const params = useParams()
   const id = params.replyId as string
   
-  const [reply, setReply] = useState<any>(null)
+  const { replies, fetchReplies, markAsRead, updateReply, loading: storeLoading } = useInboxStore()
+  
+  const reply = replies.find(r => r.id === id)
+  
   const [responseText, setResponseText] = useState('')
   const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
 
+  // Initial fetch if store is empty
   useEffect(() => {
-    const fetchReply = async () => {
-      const res = await fetch(`/api/replies/${id}`)
-      const data = await res.json()
-      setReply(data)
-      setLoading(false)
+    fetchReplies()
+  }, [fetchReplies])
 
-      if (data && !data.isRead) {
-        await fetch(`/api/replies/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isRead: true })
-        })
-      }
+  // Mark as read when viewing
+  useEffect(() => {
+    if (reply && !reply.isRead) {
+      markAsRead(id)
+      fetch(`/api/replies/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isRead: true })
+      }).catch(console.error)
     }
-    fetchReply()
-  }, [id])
+  }, [reply, id, markAsRead])
 
   const onSend = async () => {
     setSending(true)
@@ -40,16 +44,17 @@ export default function ReplyPage() {
       })
       if (!res.ok) throw new Error('Failed to send')
       const updated = await res.json()
-      setReply(updated)
+      toast.success('Reply sent successfully')
+      updateReply(id, updated)
       setResponseText('')
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send reply');
     } finally {
       setSending(false)
     }
   }
 
-  if (loading) return <div className="p-8">Loading...</div>
+  if (storeLoading && !reply) return <PageSkeleton />
   if (!reply) return <div className="p-8">Reply not found.</div>
 
   return (

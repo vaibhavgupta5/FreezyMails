@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Send, Edit, Loader2, FileText } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function CampaignActions({ id, status }: { id: string, status: string }) {
   const router = useRouter()
@@ -14,12 +15,13 @@ export default function CampaignActions({ id, status }: { id: string, status: st
     try {
       const res = await fetch(`/api/campaigns/${id}/resume`, { method: 'POST' })
       if (res.ok) {
+        toast.success('Campaign started')
         router.refresh()
       } else {
-        alert('Failed to start campaign')
+        toast.error('Failed to start campaign')
       }
-    } catch (e) {
-      console.error(e)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
