@@ -1,0 +1,16 @@
+import { NextResponse } from 'next/server'
+import { suggestReply } from '@/lib/gemini'
+import { getUser } from '@/lib/supabase'
+
+export async function POST(request: Request) {
+  const user = await getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const { originalEmail, replyReceived } = await request.json()
+    const result = await suggestReply(originalEmail, replyReceived)
+    return NextResponse.json({ reply: result })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}

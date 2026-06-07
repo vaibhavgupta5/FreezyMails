@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String?
+  avatarUrl        String?
+  defaultAccountId String?
+  createdAt        DateTime @default(now())
+
+  emailAccounts EmailAccount[]
+  templates     Template[]
+  campaigns     Campaign[]
+}
+
+model EmailAccount {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String    @default("manual")
+  label             String
+  fromName          String
+  fromEmail         String
+  smtpHost          String?
+  smtpPort          Int?
+  smtpUser          String?
+  smtpPassEncrypted String?
+  imapHost          String?
+  imapPort          Int?
+  imapUser          String?
+  imapPassEncrypted String?
+  accessToken       String?
+  refreshToken      String?
+  tokenExpiresAt    DateTime?
+  isActive          Boolean   @default(true)
+  healthScore       Int       @default(100)
+  lastPollAt        DateTime?
+  createdAt         DateTime  @default(now())
+
+  campaigns Campaign[]
+  replies   Reply[]
+}
+
+model Template {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  subject   String
+  body      String   @db.Text
+  variables Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns  Campaign[]
+  abVariants ABVariant[]
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId      String
+  template        Template       @relation(fields: [templateId], references: [id])
+  emailAccountId  String
+  emailAccount    EmailAccount   @relation(fields: [emailAccountId], references: [id])
+  name            String
+  status          CampaignStatus @default(DRAFT)
+  scheduledAt     DateTime?
+  abEnabled       Boolean        @default(false)
+  winnerVariantId String?
+  winnerVariant   ABVariant?     @relation("CampaignWinner", fields: [winnerVariantId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  recipients Recipient[]
+  mailEvents MailEvent[]
+  abVariants ABVariant[]
+  replies    Reply[]
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  PAUSED
+  DONE
+}
+
+model Recipient {
+  id          String          @id @default(uuid())
+  campaignId  String
+  campaign    Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  email       String
+  dynamicData Json
+  status      RecipientStatus @default(PENDING)
+  sentAt      DateTime?
+  failReason  String?
+  createdAt   DateTime        @default(now())
+
+  mailEvents MailEvent[]
+  replies    Reply[]
+}
+
+enum RecipientStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+model MailEvent {
+  id          String        @id @default(uuid())
+  recipientId String
+  recipient   Recipient     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  campaignId  String
+  campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type        MailEventType
+  occurredAt  DateTime      @default(now())
+  metadata    Json?
+}
+
+enum MailEventType {
+  SENT
+  OPENED
+  CLICKED
+  REPLIED
+  BOUNCED
+  FAILED
+}
+
+model ABVariant {
+  id           String    @id @default(uuid())
+  templateId   String
+  template     Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  campaignId   String
+  campaign     Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name         String
+  subject      String
+  body         String    @db.Text
+  openCount    Int       @default(0)
+  replyCount   Int       @default(0)
+  firstReplyAt DateTime?
+  isWinner     Boolean   @default(false)
+
+  wonCampaigns Campaign[] @relation("CampaignWinner")
+}
+
+model Reply {
+  id             String       @id @default(uuid())
+  campaignId     String
+  campaign       Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipientId    String
+  recipient      Recipient    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+  fromEmail      String
+  subject        String
+  body           String       @db.Text
+  receivedAt     DateTime     @default(now())
+  isRead         Boolean      @default(false)
+  repliedAt      DateTime?
+}
