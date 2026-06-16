@@ -13,7 +13,8 @@ export default function CampaignActions({ id, status }: { id: string, status: st
   const handleSend = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/campaigns/${id}/resume`, { method: 'POST' })
+      const endpoint = status === 'DRAFT' ? `/api/send/${id}` : `/api/campaigns/${id}/resume`
+      const res = await fetch(endpoint, { method: 'POST' })
       if (res.ok) {
         toast.success('Campaign started')
         router.refresh()

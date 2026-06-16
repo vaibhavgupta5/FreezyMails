@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { validateRecipientList } from '@/lib/validate'
-import { AlertTriangle, Check, Trash2, Plus, Type, Table as TableIcon } from 'lucide-react'
+import { AlertTriangle, Check, Trash2, Plus, Type, Table as TableIcon, Upload } from 'lucide-react'
 import PageSkeleton from '../../_components/PageSkeleton'
 import { useCampaignStore } from '@/stores/useCampaignStore'
+import Papa from 'papaparse'
+import toast from 'react-hot-toast'
 
 export default function NewCampaignPage() {
   const router = useRouter()
@@ -14,7 +16,8 @@ export default function NewCampaignPage() {
     inputMode, setInputMode, 
     name, templateId, accountId, setDetails,
     recipientsText, setRecipientsText,
-    parsedRecipients, validationErrors, isValid, globalError,
+    parsedRecipients, validationErrors, isValid, globalError, setGlobalError,
+    variants, setVariants,
     resetDraft
   } = useCampaignStore()
 
@@ -73,24 +76,71 @@ export default function NewCampaignPage() {
     setRecipientsText(newText, templates)
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (!results.data || results.data.length === 0) {
+          toast.error('CSV is empty or invalid')
+          return
+        }
+
+        const delimiter = '\t'
+        // Create header row
+        const rows = [requiredHeaders.join(delimiter)]
+        
+        // Map data
+        results.data.forEach((row: any) => {
+          const values = requiredHeaders.map(h => {
+            // Fuzzy match keys (case insensitive)
+            const matchedKey = Object.keys(row).find(k => k.toLowerCase() === h.toLowerCase())
+            return matchedKey ? row[matchedKey] : ''
+          })
+          rows.push(values.join(delimiter))
+        })
+
+        setRecipientsText(rows.join('\n'), templates)
+        toast.success(`Imported ${results.data.length} rows`)
+        setInputMode('table') // switch back to table view to see results
+      },
+      error: (error) => {
+        toast.error('Failed to parse CSV: ' + error.message)
+      }
+    })
+  }
+
   const handleCreate = async () => {
     if (!name || !templateId || !accountId || !isValid) return
     
-    const res = await fetch('/api/campaigns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        templateId,
-        emailAccountId: accountId,
-        recipients: parsedRecipients
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          templateId,
+          emailAccountId: accountId,
+          recipients: parsedRecipients,
+          variants
+        })
       })
-    })
 
-    if (res.ok) {
-      const { id } = await res.json()
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create campaign')
+      }
+
       resetDraft()
-      router.push(`/campaigns/${id}`)
+      toast.success('Campaign created successfully!')
+      router.push(`/campaigns/${data.id}`)
+    } catch (err: any) {
+      toast.error(err.message)
+      setGlobalError(err.message)
     }
   }
 
@@ -103,6 +153,7 @@ export default function NewCampaignPage() {
       <div className="flex gap-4 mb-8">
         <div className={`flex-1 p-3 text-center border-b-2 font-medium ${step === 1 ? 'border-ice-500 text-ice-700' : 'border-transparent text-surface-400'}`}>1. Details</div>
         <div className={`flex-1 p-3 text-center border-b-2 font-medium ${step === 2 ? 'border-ice-500 text-ice-700' : 'border-transparent text-surface-400'}`}>2. Recipients</div>
+        <div className={`flex-1 p-3 text-center border-b-2 font-medium ${step === 3 ? 'border-ice-500 text-ice-700' : 'border-transparent text-surface-400'}`}>3. A/B Variants</div>
       </div>
 
       {step === 1 && (
@@ -143,7 +194,7 @@ export default function NewCampaignPage() {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-lg font-semibold mb-2">Enter Recipients</h2>
-                <div className="flex gap-2 mb-4 bg-surface-100 p-1 rounded inline-flex">
+                <div className="flex gap-2 mb-4 bg-surface-100 p-1 rounded inline-flex items-center">
                   <button 
                     className={`px-4 py-2 text-sm font-medium rounded flex items-center gap-2 transition ${inputMode === 'table' ? 'bg-white shadow-sm text-surface-900' : 'text-surface-500 hover:text-surface-700'}`}
                     onClick={() => setInputMode('table')}
@@ -156,6 +207,11 @@ export default function NewCampaignPage() {
                   >
                     <Type size={16} /> Bulk Paste
                   </button>
+                  <div className="w-px h-6 bg-surface-300 mx-1"></div>
+                  <label className="px-4 py-2 text-sm font-medium rounded flex items-center gap-2 transition text-ice-600 hover:text-ice-700 hover:bg-surface-200 cursor-pointer">
+                    <Upload size={16} /> Upload CSV
+                    <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
+                  </label>
                 </div>
                 {inputMode === 'paste' && <p className="text-sm text-surface-600 mb-4">Copy and paste data directly from Excel or Google Sheets. The columns must match the order below.</p>}
                 
@@ -270,9 +326,54 @@ export default function NewCampaignPage() {
             </div>
           )}
 
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-6">
             <button className="skeu-btn-ghost" onClick={() => setStep(1)}>Back</button>
-            <button className="skeu-btn-primary" onClick={handleCreate} disabled={!isValid}>Create Campaign</button>
+            <button className="skeu-btn-primary" onClick={() => setStep(3)} disabled={!isValid}>Next Step</button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="space-y-6">
+          <div className="skeu-card">
+            <h2 className="text-lg font-semibold mb-2">A/B Testing (Optional)</h2>
+            <p className="text-sm text-surface-600 mb-6">Create variants of your template to test different subject lines or body copy. Our system will distribute them evenly.</p>
+            
+            {variants.length > 0 ? (
+              <div className="space-y-4">
+                {variants.map((v, i) => (
+                  <div key={i} className="p-4 border border-surface-200 rounded-lg bg-surface-50 relative group">
+                    <button 
+                      onClick={() => setVariants(variants.filter((_, idx) => idx !== i))}
+                      className="absolute top-2 right-2 text-surface-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <h4 className="font-bold text-sm mb-1">Variant {i + 1}</h4>
+                    <p className="text-sm font-medium">{v.subject}</p>
+                    <p className="text-xs text-surface-500 mt-1 truncate">{v.body}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center border-2 border-dashed border-surface-200 rounded-lg text-surface-500">
+                No variants added. The default template will be used for all recipients.
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-center">
+              <button 
+                onClick={() => setVariants([...variants, { subject: selectedTemplate?.subject || '', body: selectedTemplate?.body || '' }])}
+                className="flex items-center gap-2 text-sm font-medium text-ice-600 hover:text-ice-700"
+              >
+                <Plus size={16} /> Add Variant Manually
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-between mt-6">
+            <button className="skeu-btn-ghost" onClick={() => setStep(2)}>Back</button>
+            <button className="skeu-btn-primary" onClick={handleCreate}>Create Campaign</button>
           </div>
         </div>
       )}

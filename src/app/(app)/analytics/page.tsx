@@ -8,36 +8,49 @@ export default async function AnalyticsPage() {
   const user = await getUser()
   if (!user) return null
 
+  // 1. Fetch campaigns and reply counts
   const campaigns = await prisma.campaign.findMany({
     where: { userId: user.id },
     include: {
-      _count: {
-        select: { replies: true }
-      },
-      recipients: {
-        select: {
-          status: true,
-          mailEvents: {
-            where: { type: 'OPENED' },
-            select: { id: true }
-          }
-        }
-      }
+      _count: { select: { replies: true } }
     },
     orderBy: { createdAt: 'desc' }
   })
 
+  // 2. Fetch recipient status counts grouped by campaign
+  const recipientCounts = await prisma.recipient.groupBy({
+    by: ['campaignId', 'status'],
+    where: { campaign: { userId: user.id } },
+    _count: { _all: true }
+  })
+
+  // 3. Fetch unique opens grouped by campaign
+  // A recipient has opened if they have at least one OPENED mailEvent
+  // In Prisma, we can just group by campaignId for all OPENED events,
+  // but to get UNIQUE opens per recipient we'd need distinct or group by recipientId first.
+  // We'll use a raw query for the unique opens to be efficient.
+  const uniqueOpensRaw: { campaignId: string, opens: number }[] = await prisma.$queryRaw`
+    SELECT "campaignId", CAST(COUNT(DISTINCT "recipientId") AS INTEGER) as opens
+    FROM "MailEvent"
+    WHERE "type" = 'OPENED' AND "campaignId" IN (SELECT id FROM "Campaign" WHERE "userId" = ${user.id})
+    GROUP BY "campaignId"
+  `
+
+  const openMap = new Map(uniqueOpensRaw.map(r => [r.campaignId, r.opens]))
+
   const stats = campaigns.map(c => {
     let sent = 0
     let failed = 0
-    let opened = 0
 
-    c.recipients.forEach(r => {
-      if (r.status === 'SENT') sent++
-      if (r.status === 'FAILED') failed++
-      if (r.mailEvents.length > 0) opened++
+    // Sum up the grouped statuses for this campaign
+    recipientCounts.forEach(r => {
+      if (r.campaignId === c.id) {
+        if (r.status === 'SENT') sent += r._count._all
+        if (r.status === 'FAILED') failed += r._count._all
+      }
     })
 
+    const opened = openMap.get(c.id) || 0
     const replied = c._count.replies
     const openRate = sent > 0 ? (opened / sent) * 100 : 0
     const replyRate = sent > 0 ? (replied / sent) * 100 : 0
@@ -55,27 +68,56 @@ export default async function AnalyticsPage() {
     }
   })
 
+  // Calculate overall KPIs
+  const totalSent = stats.reduce((acc, c) => acc + c.sent, 0)
+  const totalOpened = stats.reduce((acc, c) => acc + c.opened, 0)
+  const totalReplied = stats.reduce((acc, c) => acc + c.replied, 0)
+  
+  const overallOpenRate = totalSent > 0 ? ((totalOpened / totalSent) * 100).toFixed(1) : '0.0'
+  const overallReplyRate = totalSent > 0 ? ((totalReplied / totalSent) * 100).toFixed(1) : '0.0'
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold">Analytics</h1>
+      <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-50">Analytics</h1>
       
       {stats.length === 0 ? (
-        <div className="skeu-card flex flex-col items-center justify-center min-h-[300px] text-center space-y-4">
-          <BarChart2 size={64} className="text-surface-300" />
+        <div className="skeu-card flex flex-col items-center justify-center min-h-[300px] text-center space-y-4 shadow-skeu-base border border-surface-200 dark:border-surface-700">
+          <BarChart2 size={64} className="text-surface-300 dark:text-surface-600" />
           <div>
-            <h3 className="text-lg font-semibold text-surface-900">No data available</h3>
-            <p className="text-surface-600 mt-1">Send your first campaign to see analytics.</p>
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-50">No data available</h3>
+            <p className="text-surface-600 dark:text-surface-400 mt-1">Send your first campaign to see analytics.</p>
           </div>
         </div>
       ) : (
         <>
-          <div className="skeu-card">
-            <h2 className="text-xl font-semibold mb-4">Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700">
+              <h3 className="text-sm font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2">Total Sent</h3>
+              <div className="text-3xl font-bold text-ice-600 dark:text-ice-400">{totalSent.toLocaleString()}</div>
+            </div>
+            <div className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700">
+              <h3 className="text-sm font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2">Avg Open Rate</h3>
+              <div className="flex items-end gap-2">
+                <div className="text-3xl font-bold text-surface-900 dark:text-surface-50">{overallOpenRate}%</div>
+                <div className="text-sm text-surface-500 dark:text-surface-400 mb-1">({totalOpened.toLocaleString()} opens)</div>
+              </div>
+            </div>
+            <div className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700">
+              <h3 className="text-sm font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2">Avg Reply Rate</h3>
+              <div className="flex items-end gap-2">
+                <div className="text-3xl font-bold text-surface-900 dark:text-surface-50">{overallReplyRate}%</div>
+                <div className="text-sm text-surface-500 dark:text-surface-400 mb-1">({totalReplied.toLocaleString()} replies)</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700">
+            <h2 className="text-xl font-semibold mb-4 text-surface-900 dark:text-surface-50">Trend Overview</h2>
             <OverviewChart data={stats} />
           </div>
 
-          <div className="skeu-card mt-6">
-            <h2 className="text-xl font-semibold mb-4">Campaign Performance</h2>
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-surface-900 dark:text-surface-50">Campaign Performance</h2>
             <CampaignStatsTable data={stats} />
           </div>
         </>

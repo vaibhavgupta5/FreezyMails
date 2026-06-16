@@ -15,12 +15,15 @@ interface CampaignDraftState {
   validationErrors: Record<number, string[]>;
   isValid: boolean;
   globalError: string;
+  variants: { subject: string; body: string }[];
   
   // Actions
   setStep: (step: number) => void;
   setInputMode: (mode: 'paste' | 'table') => void;
   setDetails: (name: string, templateId: string, accountId: string) => void;
   setRecipientsText: (text: string, templates: Template[]) => void;
+  setGlobalError: (error: string) => void;
+  setVariants: (variants: { subject: string; body: string }[]) => void;
   resetDraft: () => void;
 }
 
@@ -37,12 +40,15 @@ export const useCampaignStore = create<CampaignDraftState>()(
       validationErrors: {},
       isValid: false,
       globalError: '',
+      variants: [],
 
       setStep: (step) => set({ step }),
       
       setInputMode: (inputMode) => set({ inputMode }),
       
       setDetails: (name, templateId, accountId) => set({ name, templateId, accountId }),
+      
+      setVariants: (variants) => set({ variants }),
       
       setRecipientsText: (text, templates) => {
         set({ recipientsText: text });
@@ -96,6 +102,8 @@ export const useCampaignStore = create<CampaignDraftState>()(
         set({ parsedRecipients: rows, validationErrors: errors, isValid: valid, globalError });
       },
 
+      setGlobalError: (error) => set({ globalError: error }),
+
       resetDraft: () => set({
         step: 1,
         inputMode: 'table',
@@ -106,7 +114,8 @@ export const useCampaignStore = create<CampaignDraftState>()(
         parsedRecipients: [],
         validationErrors: {},
         isValid: false,
-        globalError: ''
+        globalError: '',
+        variants: []
       })
     }),
     {

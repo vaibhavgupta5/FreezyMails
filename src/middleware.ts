@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -32,14 +32,11 @@ export async function proxy(request: NextRequest) {
     const { data } = await supabase.auth.getUser()
     user = data.user
   } catch (error) {
-    // If network times out, we can fallback to checking if a session cookie exists, or just log the error and assume logged out.
-    console.error('Supabase getUser timeout or error in middleware:', error)
-    // Fallback: check session which only parses local cookies without network request
-    const { data } = await supabase.auth.getSession()
-    user = data.session?.user || null
+    console.error('Supabase getUser error in middleware:', error)
+    user = null
   }
 
-  const protectedPaths = ['/dashboard', '/campaigns', '/templates', '/accounts']
+  const protectedPaths = ['/dashboard', '/campaigns', '/templates', '/accounts', '/inbox', '/analytics', '/settings']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
   if (!user && isProtectedPath) {

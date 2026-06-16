@@ -25,7 +25,18 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     const subject = reply.subject.startsWith('Re:') ? reply.subject : `Re: ${reply.subject}`
 
-    await sendEmail(reply.emailAccount, reply.fromEmail, subject, body.replace(/\n/g, '<br/>'))
+    const escapeHtml = (unsafe: string) => {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    const safeBody = escapeHtml(body).replace(/\n/g, '<br/>')
+
+    await sendEmail(reply.emailAccount, reply.fromEmail, subject, safeBody)
 
     const updatedReply = await prisma.reply.update({
       where: { id: params.id },

@@ -12,7 +12,9 @@ import {
   ArrowRight,
   BarChart2,
   Beaker,
+  Copy,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import PageSkeleton from "../../_components/PageSkeleton";
 
 export default function CampaignPage() {
@@ -56,17 +58,29 @@ export default function CampaignPage() {
     return () => clearInterval(intervalId);
   }, [data, id]);
 
-  const handleAction = async (action: "pause" | "resume" | "duplicate") => {
-    const res = await fetch(`/api/campaigns/${id}/${action}`, {
-      method: "POST",
-    });
-    if (res.ok) {
+  const handleAction = async (action: "pause" | "resume" | "duplicate" | "send") => {
+    const url = action === "send" ? `/api/send/${id}` : `/api/campaigns/${id}/${action}`;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+      });
+      
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to process request");
+      }
+      
       if (action === "duplicate") {
         const { newId } = await res.json();
+        toast.success("Campaign duplicated!");
         router.push(`/campaigns/${newId}`);
       } else {
+        const actionMap: Record<string, string> = { pause: "paused", resume: "resumed", send: "started" };
+        toast.success(`Campaign ${actionMap[action]}!`);
         fetchCampaign();
       }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred");
     }
   };
 
@@ -99,12 +113,12 @@ export default function CampaignPage() {
               <Pause size={16} /> Pause
             </button>
           )}
-          {data.status === "PAUSED" && (
+          {(data.status === "DRAFT" || data.status === "PAUSED") && (
             <button
-              onClick={() => handleAction("resume")}
+              onClick={() => handleAction(data.status === "DRAFT" ? "send" : "resume")}
               className="skeu-btn-primary flex items-center gap-1"
             >
-              <Play size={16} /> Resume
+              <Play size={16} /> {data.status === "DRAFT" ? "Start Campaign" : "Resume"}
             </button>
           )}
           <button
@@ -150,6 +164,31 @@ export default function CampaignPage() {
           <p className="text-surface-500">No active sending progress.</p>
         )}
       </div>
+
+      {data.abEnabled && data.abVariants && data.abVariants.length > 0 && (
+        <div className="skeu-card">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Beaker size={20} className="text-ice-500" />
+            A/B Test Results
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.abVariants.map((variant: any, index: number) => (
+              <div key={variant.id} className={`p-4 border rounded-lg ${variant.isWinner ? 'border-amber-400 bg-amber-50' : 'border-surface-200 bg-white dark:bg-surface-800'}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-surface-900 dark:text-surface-50">
+                    {variant.name} {variant.isWinner && <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full uppercase tracking-wider">Winner</span>}
+                  </h3>
+                  <div className="text-xs text-surface-500 font-medium">
+                    {variant.openCount} Opens | {variant.replyCount} Replies
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{variant.subject}</p>
+                <p className="text-xs text-surface-500 mt-1 line-clamp-2">{variant.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -54,61 +54,92 @@ export default function ReplyPage() {
     }
   }
 
+  const [aiGenerating, setAiGenerating] = useState(false)
+
+  const handleSuggestReply = async () => {
+    setAiGenerating(true)
+    try {
+      const res = await fetch('/api/gemini/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          originalEmail: "I sent an email regarding " + reply?.campaign?.name, // Ideally fetch the real sent body
+          replyReceived: reply?.body || ''
+        })
+      })
+      if (!res.ok) throw new Error('AI generation failed')
+      const data = await res.json()
+      setResponseText(data.reply)
+      toast.success('Drafted AI reply!')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setAiGenerating(false)
+    }
+  }
+
   if (storeLoading && !reply) return <PageSkeleton />
-  if (!reply) return <div className="p-8">Reply not found.</div>
+  if (!reply) return <div className="p-8 text-surface-600">Reply not found.</div>
 
   return (
-    <div className="p-8 max-w-6xl mx-auto grid grid-cols-2 gap-8">
-      {/* Left side: Original Email (Simplified since we don't have the fully rendered HTML stored, we show recipient + template info) */}
-      <div className="skeu-card">
-        <h2 className="text-xl font-bold mb-4">Original Email</h2>
+    <div className="p-4 lg:p-8 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Left side: Original Email */}
+      <div className="skeu-card shadow-skeu-base">
+        <h2 className="text-xl font-bold mb-4 text-surface-900 dark:text-surface-50">Original Email context</h2>
         <div className="space-y-4">
           <div>
-            <label className="text-xs text-gray-500 uppercase">To</label>
-            <div>{reply.recipient.email}</div>
+            <label className="text-xs font-medium text-surface-500 uppercase tracking-wider">To</label>
+            <div className="text-surface-900 dark:text-surface-50">{reply.recipient.email}</div>
           </div>
           <div>
-            <label className="text-xs text-gray-500 uppercase">Campaign</label>
-            <div>{reply.campaign.name}</div>
+            <label className="text-xs font-medium text-surface-500 uppercase tracking-wider">Campaign</label>
+            <div className="text-surface-900 dark:text-surface-50">{reply.campaign.name}</div>
           </div>
-          {/* Note: In a real app we'd fetch the exact rendered template. Here we just show placeholder for Stage 2 scope. */}
+          <div className="p-4 bg-ice-50 dark:bg-ice-900/20 text-ice-800 dark:text-ice-200 text-sm border border-ice-100 dark:border-ice-800 rounded">
+            Note: Fetching the exact rendered template text will be available in future updates. AI suggestions will use general campaign context for now.
+          </div>
         </div>
       </div>
 
       {/* Right side: Reply and Composer */}
       <div className="flex flex-col space-y-6">
-        <div className="skeu-card">
-          <h2 className="text-xl font-bold mb-2">{reply.subject}</h2>
-          <div className="flex justify-between items-center mb-4 text-sm text-gray-500">
-            <span>From: {reply.fromEmail}</span>
+        <div className="skeu-card shadow-skeu-base">
+          <h2 className="text-lg font-bold mb-2 text-surface-900 dark:text-surface-50">{reply.subject}</h2>
+          <div className="flex justify-between items-center mb-4 text-sm text-surface-500">
+            <span className="font-medium text-surface-700 dark:text-surface-300">From: {reply.fromEmail}</span>
             <span>{new Date(reply.receivedAt).toLocaleString()}</span>
           </div>
-          <div className="whitespace-pre-wrap text-gray-800 border-t pt-4">
+          <div className="whitespace-pre-wrap text-surface-800 dark:text-surface-200 border-t border-surface-100 dark:border-surface-800 pt-4">
             {reply.body}
           </div>
         </div>
 
-        <div className="skeu-card flex flex-col">
-          <h3 className="font-semibold mb-2">Respond</h3>
+        <div className="skeu-card shadow-skeu-base flex flex-col">
+          <h3 className="font-semibold mb-2 text-surface-900 dark:text-surface-50">Draft Response</h3>
           <textarea
-            className="skeu-textarea w-full mb-4"
+            className="w-full mb-4 border border-surface-300 dark:border-surface-600 rounded p-3 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50 min-h-[150px]"
             value={responseText}
             onChange={e => setResponseText(e.target.value)}
             placeholder="Type your reply here..."
           />
-          <div className="flex justify-between items-center">
-            {/* AI Assist button will go here in 2E */}
-            <div id="ai-assist-placeholder"></div>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <button
+              onClick={handleSuggestReply}
+              disabled={aiGenerating}
+              className="flex items-center gap-2 text-sm px-4 py-2 bg-ice-50 dark:bg-ice-900/40 text-ice-700 dark:text-ice-300 hover:bg-ice-100 dark:hover:bg-ice-800 transition-colors border border-ice-200 dark:border-ice-700 rounded shadow-sm w-full sm:w-auto justify-center"
+            >
+              {aiGenerating ? 'Drafting...' : '✨ Suggest AI Reply'}
+            </button>
             
             <button
               onClick={onSend}
               disabled={sending || !responseText.trim()}
-              className="skeu-btn-primary"
+              className="skeu-btn-primary w-full sm:w-auto"
             >
               {sending ? 'Sending...' : (reply.repliedAt ? 'Send Again' : 'Send Reply')}
             </button>
           </div>
-          {reply.repliedAt && <p className="text-xs text-gray-500 mt-2 text-right">Replied at {new Date(reply.repliedAt).toLocaleString()}</p>}
+          {reply.repliedAt && <p className="text-xs text-surface-500 mt-4 text-right">Replied at {new Date(reply.repliedAt).toLocaleString()}</p>}
         </div>
       </div>
     </div>

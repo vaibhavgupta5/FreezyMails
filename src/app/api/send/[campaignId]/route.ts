@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getUser } from '@/lib/supabase'
-import boss, { JOB_SEND_EMAIL } from '@/lib/queue'
+import boss, { JOB_SEND_EMAIL, startBoss } from '@/lib/queue'
 
 export async function POST(request: Request, props: { params: Promise<{ campaignId: string }> }) {
   const params = await props.params;
@@ -28,17 +28,35 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
     }
 
     // Start pg-boss
-    try {
-      await boss.start()
-    } catch (err: any) {
-      if (!err.message.includes('already started')) throw err
-    }
+    await startBoss()
 
     // Rate limiting logic
-    const isGmail = campaign.emailAccount.smtpPort === 587 || campaign.emailAccount.smtpPort === 465
+    const account = campaign.emailAccount
+    const now = new Date()
+    let currentSentCount = account.dailySentCount
+    
+    // Check if daily reset is needed
+    const lastReset = account.dailySentResetAt
+    if (!lastReset || now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) {
+      currentSentCount = 0
+    }
+
+    const defaultLimit = account.provider === 'google' ? 50 : 200
+    const limit = campaign.dailyLimit || Math.min(defaultLimit, account.warmupDay * 5)
+    
+    const availableQuota = limit - currentSentCount
+    
+    if (availableQuota <= 0) {
+      return NextResponse.json({ error: 'Daily send limit reached for this account. Try again tomorrow.' }, { status: 429 })
+    }
+
+    // Only process up to availableQuota recipients
+    const recipientsToProcess = campaign.recipients.slice(0, availableQuota)
+
+    const isGmail = account.provider === 'google'
     let delaySeconds = 0
 
-    const jobs = campaign.recipients.map((recipient) => {
+    const jobs = recipientsToProcess.map((recipient) => {
       const payload = {
         recipientId: recipient.id,
         campaignId: campaign.id,
@@ -46,7 +64,7 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
         variantId: (recipient.dynamicData as any)?._variantId || null
       }
       
-      const jobSpec: any = { name: JOB_SEND_EMAIL, data: payload, options: { retryLimit: 3, retryBackoff: true } }
+      const jobSpec: any = { data: payload, options: { retryLimit: 3, retryBackoff: true } }
       
       if (isGmail) {
         jobSpec.options.startAfter = delaySeconds
@@ -56,12 +74,21 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
       return jobSpec
     })
 
-    await boss.insert(jobs)
+    await boss.insert(JOB_SEND_EMAIL, jobs)
 
-    await prisma.campaign.update({
-      where: { id: campaignId },
-      data: { status: 'SENDING' }
-    })
+    await prisma.$transaction([
+      prisma.campaign.update({
+        where: { id: campaignId },
+        data: { status: 'SENDING' }
+      }),
+      prisma.emailAccount.update({
+        where: { id: account.id },
+        data: {
+          dailySentCount: currentSentCount + jobs.length,
+          dailySentResetAt: now
+        }
+      })
+    ])
 
     return NextResponse.json({ queued: jobs.length })
   } catch (err: any) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getUser } from '@/lib/supabase'
-import boss, { JOB_SEND_EMAIL } from '@/lib/queue'
+import boss, { JOB_SEND_EMAIL, startBoss } from '@/lib/queue'
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -14,7 +14,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   })
   if (!campaign) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  try { await boss.start() } catch (err: any) { if (!err.message.includes('already started')) throw err }
+  try { await startBoss() } catch (err: any) { if (!err.message.includes('already started')) throw err }
 
   const jobs = campaign.recipients.map(r => ({
     data: {
@@ -23,8 +23,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       accountId: campaign.emailAccountId,
       variantId: (r.dynamicData as any)?._variantId || null
     },
-    retryLimit: 3, 
-    retryBackoff: true
+    options: {
+      retryLimit: 3, 
+      retryBackoff: true
+    }
   }))
 
   if (jobs.length > 0) {

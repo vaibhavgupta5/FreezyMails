@@ -110,90 +110,90 @@ export default function AccountForm() {
       </div>
 
       {showManual && (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 skeu-card shadow-skeu-base">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Label (e.g. Work Email)</label>
-            <input {...register('label')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Label (e.g. Work Email)</label>
+            <input {...register('label')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
             {errors.label && <p className="text-red-500 text-xs mt-1">{errors.label.message}</p>}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">From Name</label>
-              <input {...register('fromName')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">From Name</label>
+              <input {...register('fromName')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               {errors.fromName && <p className="text-red-500 text-xs mt-1">{errors.fromName.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">From Email</label>
-              <input {...register('fromEmail')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">From Email</label>
+              <input {...register('fromEmail')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               {errors.fromEmail && <p className="text-red-500 text-xs mt-1">{errors.fromEmail.message}</p>}
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-2">SMTP Settings (Sending)</h3>
+          <div className="border-t border-surface-200 dark:border-surface-700 pt-4">
+            <h3 className="font-semibold mb-2 text-surface-900 dark:text-surface-50">SMTP Settings (Sending)</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Host</label>
-                <input {...register('smtpHost')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Host</label>
+                <input {...register('smtpHost')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
                 {errors.smtpHost && <p className="text-red-500 text-xs mt-1">{errors.smtpHost.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Port</label>
-                <input type="number" {...register('smtpPort', { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Port</label>
+                <input type="number" {...register('smtpPort', { valueAsNumber: true })} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">User</label>
-                <input {...register('smtpUser')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">User</label>
+                <input {...register('smtpUser')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" {...register('smtpPass')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Password</label>
+                <input type="password" {...register('smtpPass')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-2">IMAP Settings (Receiving/Tracking replies)</h3>
+          <div className="border-t border-surface-200 dark:border-surface-700 pt-4">
+            <h3 className="font-semibold mb-2 text-surface-900 dark:text-surface-50">IMAP Settings (Receiving/Tracking replies)</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Host</label>
-                <input {...register('imapHost')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Host</label>
+                <input {...register('imapHost')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Port</label>
-                <input type="number" {...register('imapPort', { valueAsNumber: true })} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Port</label>
+                <input type="number" {...register('imapPort', { valueAsNumber: true })} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">User</label>
-                <input {...register('imapUser')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">User</label>
+                <input {...register('imapUser')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" {...register('imapPass')} className="mt-1 block w-full border border-gray-300 rounded p-2" />
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Password</label>
+                <input type="password" {...register('imapPass')} className="mt-1 block w-full border border-surface-300 dark:border-surface-600 rounded p-2 shadow-inner bg-white dark:bg-surface-800 focus:ring-ice-500 focus:border-ice-500 text-surface-900 dark:text-surface-50" />
               </div>
             </div>
           </div>
 
           {testResult && (
-            <div className={`p-3 rounded text-sm ${testResult.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div className={`p-3 rounded text-sm ${testResult.ok ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
               {testResult.ok ? 'Connection successful!' : `Connection failed: ${testResult.error}`}
             </div>
           )}
 
-          <div className="flex gap-4 pt-4">
+          <div className="flex justify-end gap-4 pt-4 border-t border-surface-200 dark:border-surface-700">
             <button
               type="button"
               onClick={onTest}
               disabled={testing}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50"
+              className="px-4 py-2 bg-surface-200 text-surface-800 dark:bg-surface-700 dark:text-surface-200 rounded hover:bg-surface-300 dark:hover:bg-surface-600 disabled:opacity-50 font-medium"
             >
               {testing ? 'Testing...' : 'Test Connection'}
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="skeu-btn-primary px-6 py-2"
             >
               {saving ? 'Saving...' : 'Save Account'}
             </button>

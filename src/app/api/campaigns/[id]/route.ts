@@ -11,7 +11,15 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     where: { id: params.id, userId: user.id },
     include: {
       template: true,
-      emailAccount: true,
+      emailAccount: {
+        select: {
+          id: true,
+          label: true,
+          fromEmail: true,
+          provider: true,
+          isActive: true,
+        }
+      },
       abVariants: true,
     }
   })

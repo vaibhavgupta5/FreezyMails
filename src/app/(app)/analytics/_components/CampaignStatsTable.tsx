@@ -1,16 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-
 import { CampaignStatRow } from '@/types'
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 
 export default function CampaignStatsTable({ data }: { data: CampaignStatRow[] }) {
   const [sortField, setSortField] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   const sortedData = [...data].sort((a, b) => {
-    if (a[sortField] < b[sortField]) return sortOrder === 'asc' ? -1 : 1
-    if (a[sortField] > b[sortField]) return sortOrder === 'asc' ? 1 : -1
+    if (a[sortField as keyof CampaignStatRow] < b[sortField as keyof CampaignStatRow]) return sortOrder === 'asc' ? -1 : 1
+    if (a[sortField as keyof CampaignStatRow] > b[sortField as keyof CampaignStatRow]) return sortOrder === 'asc' ? 1 : -1
     return 0
   })
 
@@ -23,34 +23,50 @@ export default function CampaignStatsTable({ data }: { data: CampaignStatRow[] }
     }
   }
 
-  const thClass = "px-4 py-3 border-b text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50"
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return <ArrowUpDown size={14} className="text-surface-300 dark:text-surface-600" />
+    return sortOrder === 'asc' 
+      ? <ArrowUp size={14} className="text-ice-600" />
+      : <ArrowDown size={14} className="text-ice-600" />
+  }
+
+  const thClass = "px-4 py-3 border-b border-surface-200 dark:border-surface-700 text-left text-sm font-semibold text-surface-700 dark:text-surface-300 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition select-none"
+
+  const renderTh = (field: string, label: string) => (
+    <th className={thClass} onClick={() => handleSort(field)}>
+      <div className="flex items-center gap-1">
+        {label}
+        {getSortIcon(field)}
+      </div>
+    </th>
+  )
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse">
-        <thead>
+    <div className="overflow-x-auto rounded-lg border border-surface-200 dark:border-surface-700 shadow-sm">
+      <table className="w-full text-left border-collapse bg-white dark:bg-surface-900">
+        <thead className="bg-surface-100 dark:bg-surface-800">
           <tr>
-            <th className={thClass} onClick={() => handleSort('name')}>Campaign Name</th>
-            <th className={thClass} onClick={() => handleSort('sent')}>Sent</th>
-            <th className={thClass} onClick={() => handleSort('opened')}>Opened</th>
-            <th className={thClass} onClick={() => handleSort('openRate')}>Open %</th>
-            <th className={thClass} onClick={() => handleSort('replied')}>Replied</th>
-            <th className={thClass} onClick={() => handleSort('replyRate')}>Reply %</th>
-            <th className={thClass} onClick={() => handleSort('failed')}>Failed</th>
-            <th className={thClass} onClick={() => handleSort('createdAt')}>Date</th>
+            {renderTh('name', 'Campaign Name')}
+            {renderTh('sent', 'Sent')}
+            {renderTh('opened', 'Opened')}
+            {renderTh('openRate', 'Open %')}
+            {renderTh('replied', 'Replied')}
+            {renderTh('replyRate', 'Reply %')}
+            {renderTh('failed', 'Failed')}
+            {renderTh('createdAt', 'Date')}
           </tr>
         </thead>
         <tbody>
           {sortedData.map(row => (
-            <tr key={row.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3 border-b">{row.name}</td>
-              <td className="px-4 py-3 border-b">{row.sent}</td>
-              <td className="px-4 py-3 border-b">{row.opened}</td>
-              <td className="px-4 py-3 border-b">{row.openRate.toFixed(1)}%</td>
-              <td className="px-4 py-3 border-b">{row.replied}</td>
-              <td className="px-4 py-3 border-b">{row.replyRate.toFixed(1)}%</td>
-              <td className="px-4 py-3 border-b text-red-500">{row.failed}</td>
-              <td className="px-4 py-3 border-b text-sm text-gray-500">{new Date(row.createdAt).toLocaleDateString()}</td>
+            <tr key={row.id} className="hover:bg-surface-50 dark:hover:bg-surface-800 transition border-b border-surface-100 dark:border-surface-800 last:border-0">
+              <td className="px-4 py-3 text-surface-900 dark:text-surface-50 font-medium">{row.name}</td>
+              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.sent}</td>
+              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.opened}</td>
+              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.openRate.toFixed(1)}%</td>
+              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.replied}</td>
+              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.replyRate.toFixed(1)}%</td>
+              <td className="px-4 py-3 text-red-600 font-medium">{row.failed}</td>
+              <td className="px-4 py-3 text-sm text-surface-500 dark:text-surface-400">{new Date(row.createdAt).toLocaleDateString()}</td>
             </tr>
           ))}
         </tbody>

@@ -29,6 +29,7 @@ interface InboxState {
   fetchReplies: () => Promise<void>;
   markAsRead: (id: string) => void;
   updateReply: (id: string, data: Partial<Reply>) => void;
+  forceRefresh: () => Promise<void>;
 }
 
 export const useInboxStore = create<InboxState>((set, get) => ({
@@ -73,5 +74,10 @@ export const useInboxStore = create<InboxState>((set, get) => ({
       );
       return { replies: newReplies };
     });
+  },
+
+  forceRefresh: async () => {
+    set({ hasFetched: false });
+    await get().fetchReplies();
   }
 }));
