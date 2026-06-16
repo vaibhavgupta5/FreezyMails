@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { getUser } from '@/lib/supabase'
 import { z } from 'zod'
 
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
         }
       })
 
-      let createdVariants: any[] = [];
+      const createdVariants: Record<string, unknown>[] = [];
       if (hasVariants) {
         // Bulk create variants is not supported in SQLite, but we are using PostgreSQL so createMany works.
         // However, Prisma doesn't return created IDs with createMany easily unless using Postgres `createManyAndReturn` (Prisma 5.14+).
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
         return {
           campaignId: newCampaign.id,
           email: String(email).trim().toLowerCase(),
-          dynamicData: dynamicData,
+          dynamicData: dynamicData as Prisma.InputJsonObject,
         }
       })
 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ id: campaign.id })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     console.error('Campaign creation error:', err)
     return NextResponse.json({ error: err.message || 'Failed to create campaign' }, { status: 400 })
   }

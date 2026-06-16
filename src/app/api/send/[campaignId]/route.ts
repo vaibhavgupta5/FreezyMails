@@ -61,10 +61,10 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
         recipientId: recipient.id,
         campaignId: campaign.id,
         accountId: campaign.emailAccountId,
-        variantId: (recipient.dynamicData as any)?._variantId || null
+        variantId: (recipient.dynamicData as Record<string, unknown>)?._variantId as string | undefined || null
       }
       
-      const jobSpec: any = { data: payload, options: { retryLimit: 3, retryBackoff: true } }
+      const jobSpec: Record<string, unknown> = { data: payload, options: { retryLimit: 3, retryBackoff: true } }
       
       if (isGmail) {
         jobSpec.options.startAfter = delaySeconds
@@ -91,7 +91,7 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
     ])
 
     return NextResponse.json({ queued: jobs.length })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

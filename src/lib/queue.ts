@@ -17,7 +17,7 @@ export async function startBoss() {
   try {
     await boss.start();
     isStarted = true;
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     if (err.message.includes('already started')) {
       isStarted = true;
       return;

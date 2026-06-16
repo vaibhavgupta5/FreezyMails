@@ -13,7 +13,7 @@ export async function PATCH(request: Request) {
       data: { name, defaultAccountId: defaultAccountId || null }
     })
     return NextResponse.json(updated)
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
     }
     
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

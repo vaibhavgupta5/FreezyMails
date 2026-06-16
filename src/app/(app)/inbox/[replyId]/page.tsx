@@ -71,7 +71,7 @@ export default function ReplyPage() {
       const data = await res.json()
       setResponseText(data.reply)
       toast.success('Drafted AI reply!')
-    } catch (err: any) {
+    } catch (_err: unknown) { const err = _err as Error;
       toast.error(err.message)
     } finally {
       setAiGenerating(false)

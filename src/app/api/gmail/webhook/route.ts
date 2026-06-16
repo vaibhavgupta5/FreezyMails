@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     console.error('Gmail webhook error:', err)
     // Always return 200 unless it's a transient DB error, 
     // otherwise Google Pub/Sub will backoff heavily.

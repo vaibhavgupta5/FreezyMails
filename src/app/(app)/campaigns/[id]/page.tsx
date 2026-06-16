@@ -17,13 +17,31 @@ import {
 import toast from "react-hot-toast";
 import PageSkeleton from "../../_components/PageSkeleton";
 
+interface CampaignData {
+  name: string;
+  status: string;
+  template?: { subject: string };
+  abEnabled?: boolean;
+  abVariants?: { id: string; name: string; subject: string; body: string; isWinner: boolean; openCount: number; replyCount: number; }[];
+  totalRecipients?: number;
+  error?: string;
+}
+
+interface CampaignProgress {
+  status: string;
+  total: number;
+  sent: number;
+  failed: number;
+  pending: number;
+}
+
 export default function CampaignPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [data, setData] = useState<any>(null);
-  const [progress, setProgress] = useState<any>(null);
+  const [data, setData] = useState<CampaignData | null>(null);
+  const [progress, setProgress] = useState<CampaignProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchCampaign = async () => {
@@ -34,26 +52,24 @@ export default function CampaignPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     fetchCampaign();
   }, [id]);
 
   useEffect(() => {
     if (!data || (data.status !== "SENDING" && !progress)) return;
 
-    let intervalId: NodeJS.Timeout;
-
     const pollProgress = async () => {
       const res = await fetch(`/api/campaigns/${id}/progress`);
       const progData = await res.json();
       setProgress(progData);
       if (progData.status === "DONE" || progData.status === "PAUSED") {
-        clearInterval(intervalId);
         fetchCampaign(); // refresh status
       }
     };
 
     pollProgress();
-    intervalId = setInterval(pollProgress, 3000);
+    const intervalId = setInterval(pollProgress, 3000);
 
     return () => clearInterval(intervalId);
   }, [data, id]);
@@ -79,7 +95,7 @@ export default function CampaignPage() {
         toast.success(`Campaign ${actionMap[action]}!`);
         fetchCampaign();
       }
-    } catch (err: any) {
+    } catch (_err: unknown) { const err = _err as Error;
       toast.error(err.message || "An error occurred");
     }
   };
@@ -172,7 +188,7 @@ export default function CampaignPage() {
             A/B Test Results
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.abVariants.map((variant: any, index: number) => (
+            {data.abVariants.map((variant: { id: string; name: string; subject: string; body: string; isWinner: boolean; openCount: number; replyCount: number; }, index: number) => (
               <div key={variant.id} className={`p-4 border rounded-lg ${variant.isWinner ? 'border-amber-400 bg-amber-50' : 'border-surface-200 bg-white dark:bg-surface-800'}`}>
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-surface-900 dark:text-surface-50">

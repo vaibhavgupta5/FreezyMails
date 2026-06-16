@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     await transporter.verify()
     
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ ok: false, error: err.message })
   }
 }

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const { originalEmail, replyReceived } = await request.json()
     const result = await suggestReply(originalEmail, replyReceived)
     return NextResponse.json({ reply: result })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

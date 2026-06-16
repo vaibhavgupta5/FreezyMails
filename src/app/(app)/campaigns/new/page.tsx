@@ -21,8 +21,8 @@ export default function NewCampaignPage() {
     resetDraft
   } = useCampaignStore()
 
-  const [templates, setTemplates] = useState<any[]>([])
-  const [accounts, setAccounts] = useState<any[]>([])
+  const [templates, setTemplates] = useState<Record<string, unknown>[]>([])
+  const [accounts, setAccounts] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
 
   const selectedTemplate = templates.find(t => t.id === templateId)
@@ -47,7 +47,7 @@ export default function NewCampaignPage() {
     const delimiter = lines[0].includes('\t') ? '\t' : ','
     return lines.map(line => {
       const vals = line.split(delimiter)
-      const obj: any = {}
+      const obj: Record<string, string> = {}
       requiredHeaders.forEach((h, i) => {
         obj[h] = vals[i] || ''
       })
@@ -94,7 +94,7 @@ export default function NewCampaignPage() {
         const rows = [requiredHeaders.join(delimiter)]
         
         // Map data
-        results.data.forEach((row: any) => {
+        results.data.forEach((row: Record<string, string>) => {
           const values = requiredHeaders.map(h => {
             // Fuzzy match keys (case insensitive)
             const matchedKey = Object.keys(row).find(k => k.toLowerCase() === h.toLowerCase())
@@ -138,7 +138,7 @@ export default function NewCampaignPage() {
       resetDraft()
       toast.success('Campaign created successfully!')
       router.push(`/campaigns/${data.id}`)
-    } catch (err: any) {
+    } catch (_err: unknown) { const err = _err as Error;
       toast.error(err.message)
       setGlobalError(err.message)
     }

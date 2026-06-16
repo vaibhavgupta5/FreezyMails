@@ -38,7 +38,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     })
 
     await Promise.all(pendingRecipients.map(recipient => {
-      const dynamicData = (recipient.dynamicData as any) || {}
+      const dynamicData = (recipient.dynamicData as Record<string, unknown>) || {}
       return prisma.recipient.update({
         where: { id: recipient.id },
         data: { dynamicData: { ...dynamicData, _variantId: variant.id } }
@@ -46,7 +46,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }))
 
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

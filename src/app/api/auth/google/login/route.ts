@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     })
     
     return NextResponse.redirect(url)
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     return NextResponse.redirect(new URL(`/accounts?error=${encodeURIComponent(error.message)}`, request.url))
   }
 }

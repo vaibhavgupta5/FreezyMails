@@ -101,7 +101,7 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
       } else {
         throw new Error('Invalid AI response')
       }
-    } catch (err: any) {
+    } catch (_err: unknown) { const err = _err as Error;
       toast.error(err.message)
     } finally {
       setAiGenerating(false)

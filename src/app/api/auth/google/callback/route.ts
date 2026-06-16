@@ -42,7 +42,7 @@ export async function GET(request: Request) {
 
     // Fetch user profile to get email address
     const profileRes = await client.request({ url: 'https://www.googleapis.com/oauth2/v2/userinfo' })
-    const profile = profileRes.data as any
+    const profile = profileRes.data as { email: string; name?: string; given_name?: string }
 
     const fromEmail = profile.email
     const fromName = profile.name || profile.given_name || 'Google Account'
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(`${origin}/accounts?success=google_connected`)
 
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.redirect(`${origin}/accounts?error=${encodeURIComponent(err.message)}`)
   }
 }

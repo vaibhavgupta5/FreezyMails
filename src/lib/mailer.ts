@@ -8,7 +8,7 @@ export async function sendEmail(
   subject: string,
   html: string,
   trackingPixelUrl?: string
-): Promise<any> {
+): Promise<{ messageId: string }> {
   let transporter
   
   if (account.provider === 'google') {

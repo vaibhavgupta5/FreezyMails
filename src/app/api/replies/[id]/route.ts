@@ -36,7 +36,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     })
     
     return NextResponse.json(reply)
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 400 })
   }
 }

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const { subject, count } = await request.json()
     const result = await generateSubjectVariants(subject, count)
     return NextResponse.json(result)
-  } catch (err: any) {
+  } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
