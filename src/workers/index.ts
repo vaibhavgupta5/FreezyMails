@@ -1,3 +1,6 @@
+import dns from 'node:dns'
+dns.setDefaultResultOrder('ipv4first')
+
 import http from 'http'
 import boss, { JOB_SEND_EMAIL, JOB_POLL_IMAP } from '../lib/queue'
 import { handleSendEmail } from './send-handler'
