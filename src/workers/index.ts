@@ -1,6 +1,20 @@
 import dns from 'node:dns'
 dns.setDefaultResultOrder('ipv4first')
 
+import https from 'node:https'
+import { setGlobalDispatcher, Agent } from 'undici'
+
+// Option A: Force IPv4 for Node 18+ native fetch / gaxios
+setGlobalDispatcher(new Agent({ connect: { family: 4 } }))
+
+// Option B: Force IPv4 for legacy https requests
+const originalLookup = dns.lookup;
+https.globalAgent.options.lookup = (hostname: string, options, callback) => {
+  return originalLookup(hostname, { ...options, family: 4 }, callback);
+};
+
+console.log('dns order:', dns.getDefaultResultOrder()); // should print 'ipv4first'
+
 import http from 'http'
 import boss, { JOB_SEND_EMAIL, JOB_POLL_IMAP } from '../lib/queue'
 import { handleSendEmail } from './send-handler'
