@@ -28,8 +28,8 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
         throw new Error('Missing associated records')
       }
 
-      if (campaign.status !== 'SENDING') {
-        throw new Error('Campaign is not currently SENDING, aborting job.')
+      if (campaign.status === 'PAUSED' || campaign.status === 'DRAFT') {
+        throw new Error(`Campaign is ${campaign.status}, aborting job.`)
       }
 
       let subject = ''
