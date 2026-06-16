@@ -42,7 +42,7 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
     }
 
     const defaultLimit = account.provider === 'google' ? 50 : 200
-    const limit = campaign.dailyLimit || Math.min(defaultLimit, account.warmupDay * 5)
+    const limit = campaign.dailyLimit || Math.min(defaultLimit, account.warmupDay * 25)
     
     const availableQuota = limit - currentSentCount
     
@@ -74,8 +74,6 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
       return jobSpec
     })
 
-    await boss.insert(JOB_SEND_EMAIL, jobs)
-
     await prisma.$transaction([
       prisma.campaign.update({
         where: { id: campaignId },
@@ -89,6 +87,8 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
         }
       })
     ])
+
+    await boss.insert(JOB_SEND_EMAIL, jobs)
 
     return NextResponse.json({ queued: jobs.length })
   } catch (_err: unknown) { const err = _err as Error;

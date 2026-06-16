@@ -116,15 +116,15 @@
   }
   
   .skeu-btn-primary {
-    @apply bg-ice-500 text-white rounded-lg px-4 py-2 text-sm font-medium shadow-skeu-btn border border-ice-700 hover:bg-ice-600 active:shadow-skeu-btn-press active:translate-y-px transition-all disabled:opacity-50;
+    @apply bg-ice-500 text-white rounded-lg px-4 py-2 text-sm font-medium shadow-skeu-btn border border-ice-700 hover:bg-ice-600 active:shadow-skeu-btn-press active:translate-y-px transition-all disabled:opacity-50 cursor-pointer;
   }
   
   .skeu-btn-ghost {
-    @apply bg-surface-100 text-surface-900 rounded-lg px-4 py-2 text-sm border border-surface-400 shadow-skeu-btn hover:bg-surface-50 active:shadow-skeu-btn-press active:translate-y-px disabled:opacity-50 transition-all;
+    @apply bg-surface-100 text-surface-900 rounded-lg px-4 py-2 text-sm border border-surface-400 shadow-skeu-btn hover:bg-surface-50 active:shadow-skeu-btn-press active:translate-y-px disabled:opacity-50 transition-all cursor-pointer;
   }
   
   .skeu-btn-danger {
-    @apply bg-red-600 border-red-800 text-white rounded-lg px-4 py-2 text-sm font-medium shadow-skeu-btn hover:bg-red-700 active:shadow-skeu-btn-press active:translate-y-px transition-all disabled:opacity-50;
+    @apply bg-red-600 border-red-800 text-white rounded-lg px-4 py-2 text-sm font-medium shadow-skeu-btn hover:bg-red-700 active:shadow-skeu-btn-press active:translate-y-px transition-all disabled:opacity-50 cursor-pointer;
   }
   
   .skeu-badge {

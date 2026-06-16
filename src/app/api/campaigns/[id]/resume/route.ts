@@ -29,15 +29,15 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
   }))
 
-  if (jobs.length > 0) {
-    await boss.createQueue(JOB_SEND_EMAIL)
-    await boss.insert(JOB_SEND_EMAIL, jobs)
-  }
-
   await prisma.campaign.update({
     where: { id: campaign.id },
     data: { status: 'SENDING' }
   })
+
+  if (jobs.length > 0) {
+    await boss.createQueue(JOB_SEND_EMAIL)
+    await boss.insert(JOB_SEND_EMAIL, jobs)
+  }
 
   return NextResponse.json({ ok: true, queued: jobs.length })
 }

@@ -1,13 +1,14 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Sun, Moon, ChevronRight } from "lucide-react";
+import { Sun, Moon, ChevronRight, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -18,6 +19,13 @@ export default function Header() {
   return (
     <header className="h-16 border-b border-surface-400 bg-surface-200 flex items-center justify-between px-6 sticky top-0 z-10 shrink-0">
       <div className="flex items-center text-sm text-surface-600">
+        <button 
+          onClick={() => router.back()} 
+          className="p-1 mr-3 rounded hover:bg-surface-300 text-surface-600 transition-colors flex items-center justify-center cursor-pointer"
+          title="Go back"
+        >
+          <ArrowLeft size={16} />
+        </button>
         <Link href="/dashboard" className="hover:text-surface-900 transition-colors">
           Home
         </Link>
@@ -47,7 +55,7 @@ export default function Header() {
             console.log('Setting theme to:', nextTheme);
             setTheme(nextTheme);
           }}
-          className="p-2 rounded-full bg-surface-100 hover:bg-surface-50 text-surface-600 hover:text-ice-600 transition-colors border border-surface-400"
+          className="p-2 rounded-full bg-surface-100 hover:bg-surface-50 text-surface-600 hover:text-ice-600 transition-colors border border-surface-400 cursor-pointer"
           title="Toggle Theme"
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}

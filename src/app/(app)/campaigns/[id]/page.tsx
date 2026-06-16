@@ -3,16 +3,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ChevronLeft,
   Play,
   Pause,
-  Trash2,
-  Edit2,
-  Plus,
-  ArrowRight,
-  BarChart2,
-  Beaker,
   Copy,
+  RotateCcw,
+  Beaker,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import PageSkeleton from "../../_components/PageSkeleton";
@@ -57,26 +52,55 @@ export default function CampaignPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!data || (data.status !== "SENDING" && !progress)) return;
+    if (!data) return;
 
-    const pollProgress = async () => {
+    const fetchProgress = async () => {
       const res = await fetch(`/api/campaigns/${id}/progress`);
       const progData = await res.json();
       setProgress(progData);
-      if (progData.status === "DONE" || progData.status === "PAUSED") {
-        fetchCampaign(); // refresh status
+      
+      // If the backend says it's done but our local data still says SENDING, refresh
+      if ((progData.status === "DONE" || progData.status === "PAUSED") && data.status === "SENDING") {
+        fetchCampaign();
       }
     };
 
-    pollProgress();
-    const intervalId = setInterval(pollProgress, 3000);
+    // Always fetch once to get the current stats
+    fetchProgress();
 
-    return () => clearInterval(intervalId);
-  }, [data, id]);
+    // Only set up a polling loop if the campaign is actively sending
+    if (data.status === "SENDING") {
+      const intervalId = setInterval(fetchProgress, 3000);
+      return () => clearInterval(intervalId);
+    }
+  }, [data?.status, id]);
 
-  const handleAction = async (action: "pause" | "resume" | "duplicate" | "send") => {
-    const url = action === "send" ? `/api/send/${id}` : `/api/campaigns/${id}/${action}`;
+  const handleAction = async (action: "pause" | "resume" | "duplicate" | "send" | "resendAll" | "resendFailed") => {
     try {
+      if (action === "resendAll" || action === "resendFailed") {
+        const type = action === "resendAll" ? "all" : "failed";
+        const resendRes = await fetch(`/api/campaigns/${id}/resend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type })
+        });
+        if (!resendRes.ok) {
+          const err = await resendRes.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to reset campaign");
+        }
+        
+        const sendRes = await fetch(`/api/send/${id}`, { method: "POST" });
+        if (!sendRes.ok) {
+          const err = await sendRes.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to start campaign");
+        }
+        
+        toast.success(`Campaign resending to ${type}!`);
+        fetchCampaign();
+        return;
+      }
+
+      const url = action === "send" ? `/api/send/${id}` : `/api/campaigns/${id}/${action}`;
       const res = await fetch(url, {
         method: "POST",
       });
@@ -136,6 +160,24 @@ export default function CampaignPage() {
             >
               <Play size={16} /> {data.status === "DRAFT" ? "Start Campaign" : "Resume"}
             </button>
+          )}
+          {data.status === "DONE" && (
+            <>
+              <button
+                onClick={() => handleAction("resendAll")}
+                className="skeu-btn-primary flex items-center gap-1"
+              >
+                <RotateCcw size={16} /> Resend All
+              </button>
+              {(progress?.failed || 0) > 0 && (
+                <button
+                  onClick={() => handleAction("resendFailed")}
+                  className="skeu-btn-ghost flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <RotateCcw size={16} /> Resend Failed ({progress?.failed})
+                </button>
+              )}
+            </>
           )}
           <button
             onClick={() => handleAction("duplicate")}

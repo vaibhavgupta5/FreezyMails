@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "worker": "tsx src/workers/index.ts",
+    "worker": "tsx --env-file=.env src/workers/index.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -33,6 +33,7 @@
     "react-hook-form": "^7.77.0",
     "react-hot-toast": "^2.6.0",
     "recharts": "^3.8.1",
+    "undici": "^8.5.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
