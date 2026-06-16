@@ -24,6 +24,9 @@ async function startWorker() {
   }
 
   console.log('Registering worker handlers...')
+  await boss.createQueue(JOB_SEND_EMAIL)
+  await boss.createQueue(JOB_POLL_IMAP)
+  
   await boss.work(JOB_SEND_EMAIL, { localConcurrency: 5 }, handleSendEmail)
   await boss.work(JOB_POLL_IMAP, { localConcurrency: 2 }, handleImapPoll)
   console.log('Handlers registered.')
