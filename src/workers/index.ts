@@ -2,10 +2,14 @@ import dns from 'node:dns'
 dns.setDefaultResultOrder('ipv4first')
 
 import https from 'node:https'
-import { setGlobalDispatcher, Agent } from 'undici'
-
-// Option A: Force IPv4 for Node 18+ native fetch / gaxios
-setGlobalDispatcher(new Agent({ connect: { family: 4 } }))
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { setGlobalDispatcher, Agent } = require('undici')
+  // Option A: Force IPv4 for Node 18+ native fetch / gaxios
+  setGlobalDispatcher(new Agent({ connect: { family: 4 } }))
+} catch (e) {
+  console.log('undici not found, skipping global dispatcher patch')
+}
 
 // Option B: Force IPv4 for legacy https requests
 const originalLookup = dns.lookup;
