@@ -1,3 +1,4 @@
+import http from 'http'
 import boss, { JOB_SEND_EMAIL, JOB_POLL_IMAP } from '../lib/queue'
 import { handleSendEmail } from './send-handler'
 import { handleImapPoll } from './imap-handler'
@@ -10,17 +11,31 @@ async function startWorker() {
   try {
     await boss.start()
     console.log('pg-boss started successfully')
-  } catch (err: any) {
-    if (!err.message.includes('already started')) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      if (!err.message.includes('already started')) {
+        console.error('Failed to start pg-boss', err)
+        process.exit(1)
+      }
+    } else {
       console.error('Failed to start pg-boss', err)
       process.exit(1)
     }
   }
 
   console.log('Registering worker handlers...')
-  await boss.work(JOB_SEND_EMAIL, { teamSize: 5, teamConcurrency: 5 }, handleSendEmail)
-  await boss.work(JOB_POLL_IMAP, { teamSize: 2, teamConcurrency: 2 }, handleImapPoll)
+  await boss.work(JOB_SEND_EMAIL, { localConcurrency: 5 }, handleSendEmail)
+  await boss.work(JOB_POLL_IMAP, { localConcurrency: 2 }, handleImapPoll)
   console.log('Handlers registered.')
+
+  // Dummy HTTP server so Render Web Service (Free Tier) stays alive
+  const port = process.env.PORT || 8080
+  http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.end('Worker is running')
+  }).listen(port, () => {
+    console.log(`Dummy HTTP server listening on port ${port}`)
+  })
 }
 
 startWorker().catch(err => {
