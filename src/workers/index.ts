@@ -28,7 +28,6 @@ async function startWorker() {
   await boss.work(JOB_POLL_IMAP, { localConcurrency: 2 }, handleImapPoll)
   console.log('Handlers registered.')
 
-  // Dummy HTTP server so Render Web Service (Free Tier) stays alive
   const port = process.env.PORT || 8080
   http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' })

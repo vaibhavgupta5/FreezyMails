@@ -64,7 +64,7 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
         variantId: (recipient.dynamicData as Record<string, unknown>)?._variantId as string | undefined || null
       }
       
-      const jobSpec: Record<string, unknown> = { data: payload, options: { retryLimit: 3, retryBackoff: true } }
+      const jobSpec: { data: typeof payload; options: { retryLimit: number; retryBackoff: boolean; startAfter?: number } } = { data: payload, options: { retryLimit: 3, retryBackoff: true } }
       
       if (isGmail) {
         jobSpec.options.startAfter = delaySeconds

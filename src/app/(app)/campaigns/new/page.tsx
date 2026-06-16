@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { validateRecipientList } from '@/lib/validate'
 import { AlertTriangle, Check, Trash2, Plus, Type, Table as TableIcon, Upload } from 'lucide-react'
+import type { Template, EmailAccount } from '@prisma/client'
 import PageSkeleton from '../../_components/PageSkeleton'
 import { useCampaignStore } from '@/stores/useCampaignStore'
 import Papa from 'papaparse'
@@ -21,12 +21,12 @@ export default function NewCampaignPage() {
     resetDraft
   } = useCampaignStore()
 
-  const [templates, setTemplates] = useState<Record<string, unknown>[]>([])
-  const [accounts, setAccounts] = useState<Record<string, unknown>[]>([])
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [accounts, setAccounts] = useState<EmailAccount[]>([])
   const [loading, setLoading] = useState(true)
 
   const selectedTemplate = templates.find(t => t.id === templateId)
-  const requiredHeaders = selectedTemplate ? ['email', ...(selectedTemplate.variables || [])] : ['email']
+  const requiredHeaders = selectedTemplate ? ['email', ...((selectedTemplate.variables as string[]) || [])] : ['email']
 
   useEffect(() => {
     Promise.all([
@@ -94,7 +94,7 @@ export default function NewCampaignPage() {
         const rows = [requiredHeaders.join(delimiter)]
         
         // Map data
-        results.data.forEach((row: Record<string, string>) => {
+        ;(results.data as Record<string, string>[]).forEach((row) => {
           const values = requiredHeaders.map(h => {
             // Fuzzy match keys (case insensitive)
             const matchedKey = Object.keys(row).find(k => k.toLowerCase() === h.toLowerCase())
