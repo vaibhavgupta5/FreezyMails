@@ -32,10 +32,20 @@ async function startWorker() {
   console.log('Handlers registered.')
 
   const port = process.env.PORT || 8080
-  http.createServer((req, res) => {
+  const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' })
     res.end('Worker is running')
-  }).listen(port, () => {
+  })
+  
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is in use, running worker without HTTP server...`)
+    } else {
+      console.error('HTTP server error:', err)
+    }
+  })
+
+  server.listen(port, () => {
     console.log(`Dummy HTTP server listening on port ${port}`)
   })
 }

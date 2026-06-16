@@ -13,6 +13,8 @@ interface SendEmailData {
 
 export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEmailData>[]) {
   const jobs = Array.isArray(jobOrJobs) ? jobOrJobs : [jobOrJobs]
+  console.log(`Picked up ${jobs.length} email job(s) from queue...`)
+
   for (const job of jobs) {
     const { recipientId, campaignId, accountId, variantId } = job.data
     
@@ -56,7 +58,9 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       const pixelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/track/open/${recipient.id}`
       
       // Send email
+      console.log(`Sending email to ${recipient.email} via ${account.provider}...`)
       const sendResult = await sendEmail(account, recipient.email, renderedSubject, renderedBody, pixelUrl)
+      console.log(`✅ Sent successfully to ${recipient.email}`)
 
       // Update recipient and create event
       await prisma.$transaction([
@@ -87,6 +91,8 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error(`❌ Failed to send to recipient ${recipientId}:`, errorMessage)
+      
       await prisma.recipient.update({
         where: { id: recipientId },
         data: { status: 'FAILED', failReason: errorMessage }
