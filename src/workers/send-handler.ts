@@ -11,7 +11,8 @@ interface SendEmailData {
   variantId: string | null;
 }
 
-export async function handleSendEmail(jobs: Job<SendEmailData>[]) {
+export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEmailData>[]) {
+  const jobs = Array.isArray(jobOrJobs) ? jobOrJobs : [jobOrJobs]
   for (const job of jobs) {
     const { recipientId, campaignId, accountId, variantId } = job.data
     
