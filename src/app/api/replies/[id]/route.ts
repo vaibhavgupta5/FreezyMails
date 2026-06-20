@@ -28,11 +28,14 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { isRead } = await request.json()
+    const body = await request.json()
+    const data: any = {}
+    if (body.isRead !== undefined) data.isRead = body.isRead
+    if (body.isFlagged !== undefined) data.isFlagged = body.isFlagged
     
     const reply = await prisma.reply.update({
       where: { id: params.id },
-      data: { isRead }
+      data
     })
     
     return NextResponse.json(reply)

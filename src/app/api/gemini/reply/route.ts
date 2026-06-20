@@ -7,8 +7,8 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { originalEmail, replyReceived } = await request.json()
-    const result = await suggestReply(originalEmail, replyReceived)
+    const { originalEmail, replyReceived, instruction } = await request.json()
+    const result = await suggestReply(originalEmail, replyReceived, instruction)
     return NextResponse.json({ reply: result })
   } catch (_err: unknown) { const err = _err as Error;
     return NextResponse.json({ error: err.message }, { status: 500 })

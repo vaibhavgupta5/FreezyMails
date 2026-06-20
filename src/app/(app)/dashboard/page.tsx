@@ -1,194 +1,532 @@
-import { getUser } from '@/lib/supabase'
-import Link from 'next/link'
-import prisma from '@/lib/prisma'
-import { Mail, Inbox, Server, BarChart2, Plus, Clock, CheckCircle2, Play } from 'lucide-react'
+import { Inbox, Users, BarChart2, Settings } from "lucide-react";
+import prisma from "@/lib/prisma";
+import { getUser } from "@/lib/supabase";
+import Link from "next/link";
+import { Card } from "@/components/ui/card";
 
-export default async function DashboardPage() {
-  const user = await getUser()
-  if (!user) return null
+function timeAgo(date: Date) {
+  const diff = new Date().getTime() - date.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  if (hours < 1) return "Just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  return `${days}d ago`;
+}
 
-  const firstName = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'there'
+export default async function Dashboard() {
+  const user = await getUser();
+  if (!user) return null;
 
-  // Fetch KPI data
-  const [activeCampaigns, totalAccounts, recentCampaigns] = await Promise.all([
-    prisma.campaign.count({
-      where: { userId: user.id, status: 'SENDING' }
-    }),
-    prisma.emailAccount.count({
-      where: { userId: user.id, isActive: true }
+  const firstName =
+    user.user_metadata?.full_name?.split(" ")[0] ||
+    user.email?.split("@")[0] ||
+    "there";
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 7);
+
+  const fourteenDaysAgo = new Date(now);
+  fourteenDaysAgo.setDate(now.getDate() - 14);
+
+  // Fetch Data
+  const [
+    accounts,
+    campaigns,
+    eventsToday,
+    eventsLast7Days,
+    eventsPrev7Days,
+    unreadReplies,
+    recipients,
+  ] = await Promise.all([
+    prisma.emailAccount.findMany({
+      where: { userId: user.id, isActive: true },
     }),
     prisma.campaign.findMany({
       where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 4,
-      include: {
-        _count: { select: { recipients: true, replies: true } }
-      }
+      include: { _count: { select: { recipients: true } } },
+    }),
+    prisma.mailEvent.findMany({
+      where: { campaign: { userId: user.id }, occurredAt: { gte: startOfDay } },
+    }),
+    prisma.mailEvent.findMany({
+      where: {
+        campaign: { userId: user.id },
+        occurredAt: { gte: sevenDaysAgo },
+      },
+    }),
+    prisma.mailEvent.findMany({
+      where: {
+        campaign: { userId: user.id },
+        occurredAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+      },
+    }),
+    prisma.reply.findMany({
+      where: { campaign: { userId: user.id }, isRead: false },
+      include: { campaign: true, recipient: true },
+      orderBy: { receivedAt: "desc" },
+    }),
+    prisma.recipient.findMany({
+      where: { campaign: { userId: user.id } },
+      include: { mailEvents: true, campaign: true, replies: true },
+    }),
+  ]);
+
+  // --- STAT CALCULATIONS ---
+
+  // Sent Today
+  const sentToday = eventsToday.filter((e) => e.type === "SENT").length;
+  const totalDailyLimit = accounts.reduce((acc, account) => {
+    const defaultLimit = account.provider === "google" ? 50 : 200;
+    return acc + Math.min(defaultLimit, account.warmupDay * 25);
+  }, 0);
+  const dailyLimitPercent =
+    totalDailyLimit > 0 ? Math.round((sentToday / totalDailyLimit) * 100) : 0;
+
+  // All-time rates
+  const sentRecipientIds = new Set(
+    recipients
+      .filter(
+        (r) =>
+          r.status === "SENT" ||
+          r.status === "BOUNCED" ||
+          r.status === "FAILED",
+      )
+      .map((r) => r.id),
+  );
+  const totalSentRecipients = sentRecipientIds.size;
+  const openedRecipientIds = new Set(
+    recipients
+      .filter((r) => r.mailEvents.some((e) => e.type === "OPENED"))
+      .map((r) => r.id),
+  );
+  const openRate =
+    totalSentRecipients > 0
+      ? Math.round((openedRecipientIds.size / totalSentRecipients) * 100)
+      : 0;
+
+  const repliedRecipientIds = new Set(
+    recipients.filter((r) => r.replies.length > 0).map((r) => r.id),
+  );
+  const replyRateNum =
+    totalSentRecipients > 0
+      ? (repliedRecipientIds.size / totalSentRecipients) * 100
+      : 0;
+  const replyRate = replyRateNum.toFixed(1);
+
+  // Open Rate Jump
+  const sentThisWeek = new Set(
+    eventsLast7Days.filter((e) => e.type === "SENT").map((e) => e.recipientId),
+  );
+  const openedThisWeek = new Set(
+    eventsLast7Days
+      .filter((e) => e.type === "OPENED")
+      .map((e) => e.recipientId),
+  );
+  const openRateThisWeek =
+    sentThisWeek.size > 0
+      ? Math.round((openedThisWeek.size / sentThisWeek.size) * 100)
+      : 0;
+
+  const sentPrevWeek = new Set(
+    eventsPrev7Days.filter((e) => e.type === "SENT").map((e) => e.recipientId),
+  );
+  const openedPrevWeek = new Set(
+    eventsPrev7Days
+      .filter((e) => e.type === "OPENED")
+      .map((e) => e.recipientId),
+  );
+  const openRatePrevWeek =
+    sentPrevWeek.size > 0
+      ? Math.round((openedPrevWeek.size / sentPrevWeek.size) * 100)
+      : 0;
+
+  const openRateJump = openRateThisWeek - openRatePrevWeek;
+
+  // Warm Leads
+  const warmRecipients = recipients.filter((r) => {
+    if (r.replies.length > 0) return false;
+    const openCount = r.mailEvents.filter((e) => e.type === "OPENED").length;
+    return openCount >= 2;
+  });
+  const warmLeadsCount = warmRecipients.length;
+
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const recentWarmRecipients = warmRecipients.filter((r) => {
+    const lastOpen = r.mailEvents
+      .filter((e) => e.type === "OPENED")
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime())[0];
+    return lastOpen && lastOpen.occurredAt > yesterday;
+  });
+
+  // --- FEED GENERATION ---
+  const feedItems: {
+    type: "reply" | "warm" | "draft" | "fix";
+    title: string;
+    subtitle: string;
+    date: Date;
+    initial: string;
+    link: string;
+  }[] = [];
+
+  for (const reply of unreadReplies) {
+    feedItems.push({
+      type: "reply",
+      title: reply.fromEmail || "Unknown Sender",
+      subtitle: `${reply.campaign.name} · "${reply.body.substring(0, 40)}..."`,
+      date: reply.receivedAt,
+      initial: (reply.fromEmail || "U").charAt(0).toUpperCase(),
+      link: "/inbox",
+    });
+  }
+
+  for (const r of recentWarmRecipients) {
+    const lastOpen = r.mailEvents
+      .filter((e) => e.type === "OPENED")
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime())[0];
+    feedItems.push({
+      type: "warm",
+      title: String(
+        (r.dynamicData as Record<string, unknown>)?.firstName || r.email,
+      ),
+      subtitle: `${r.campaign.name} · Opened multiple times recently`,
+      date: lastOpen.occurredAt,
+      initial: String(
+        (r.dynamicData as Record<string, unknown>)?.firstName || r.email,
+      )
+        .charAt(0)
+        .toUpperCase(),
+      link: `/campaigns/${r.campaign.id}`,
+    });
+  }
+
+  const drafts = campaigns.filter((c) => c.status === "DRAFT");
+  for (const draft of drafts) {
+    feedItems.push({
+      type: "draft",
+      title: `Draft: ${draft.name}`,
+      subtitle: `${draft._count.recipients} recipients ready to send`,
+      date: draft.updatedAt,
+      initial: "D",
+      link: `/campaigns/${draft.id}`,
+    });
+  }
+
+  const failedRecipients = recipients.filter(
+    (r) => r.status === "FAILED" || r.status === "BOUNCED",
+  );
+  const recentFailed = failedRecipients.filter(
+    (r) => r.createdAt > sevenDaysAgo,
+  );
+  for (const r of recentFailed) {
+    feedItems.push({
+      type: "fix",
+      title: `Delivery Issue: ${r.email}`,
+      subtitle: `${r.campaign.name} · ${r.failReason || "Bounced"}`,
+      date: r.sentAt || r.createdAt,
+      initial: r.email.charAt(0).toUpperCase(),
+      link: `/campaigns/${r.campaign.id}`,
+    });
+  }
+
+  feedItems.sort((a, b) => b.date.getTime() - a.date.getTime());
+  const topFeed = feedItems.slice(0, 6);
+
+  // --- CAMPAIGN PERFORMANCE ---
+  const campaignPerformance = campaigns
+    .filter((c) => c.status !== "DRAFT")
+    .map((c) => {
+      const campRecipients = recipients.filter((r) => r.campaignId === c.id);
+      const sent = campRecipients.filter(
+        (r) =>
+          r.status === "SENT" ||
+          r.status === "BOUNCED" ||
+          r.status === "FAILED",
+      ).length;
+      const opened = campRecipients.filter((r) =>
+        r.mailEvents.some((e) => e.type === "OPENED"),
+      ).length;
+      const rate = sent > 0 ? Math.round((opened / sent) * 100) : 0;
+      return {
+        id: c.id,
+        name: c.name,
+        openRate: rate,
+        sent,
+      };
     })
-  ])
+    .sort((a, b) => b.sent - a.sent)
+    .slice(0, 4);
+
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const dateString = formatter.format(now);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-ice-600 from-ice-900 to-ice-900 p-8 sm:p-10 shadow-skeu-raised text-white">
-        <div className="absolute top-0 right-0 -mt-16 -mr-16 opacity-20 pointer-events-none">
-          <div className="w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl animate-pulse"></div>
-        </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Welcome back, {firstName}! ❄️
+    <div className="skeu-page">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-text-primary">
+              Good morning, {firstName}
             </h1>
-            <p className="text-ice-100 max-w-xl text-lg">
-              {"Here's a quick overview of your workspace. Let's send some cold emails that actually get warm replies."}
-            </p>
+            <p className="text-sm text-text-muted">{dateString}</p>
           </div>
-          <div className="flex gap-3">
-            <Link href="/campaigns/new" className="inline-flex items-center gap-2 justify-center bg-white text-ice-900 px-6 py-3 rounded-xl font-bold shadow-skeu-raised hover:shadow-skeu-raised hover:-translate-y-0.5 transition-all duration-300">
-              <Plus size={20} />
-              New Campaign
-            </Link>
-          </div>
-        </div>
-      </div>
-      
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-1">Active Campaigns</p>
-              <h3 className="text-3xl font-bold text-surface-900 dark:text-surface-50">{activeCampaigns}</h3>
-            </div>
-            <div className="p-2 bg-ice-50 dark:bg-ice-900/40 rounded-lg">
-              <Play size={24} className="text-ice-600 dark:text-ice-400" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-1">Active Accounts</p>
-              <h3 className="text-3xl font-bold text-surface-900 dark:text-surface-50">{totalAccounts}</h3>
-            </div>
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/40 rounded-lg">
-              <Server size={24} className="text-emerald-600 dark:text-emerald-400" />
-            </div>
-          </div>
+          <Link href="/campaigns/new" className="skeu-btn-primary">
+            + New campaign
+          </Link>
         </div>
 
-        {/* Quick Links in KPI style */}
-        <Link href="/inbox" className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 hover:border-amber-300 hover:shadow-skeu-raised transition-all group">
-          <div className="flex items-center gap-4 h-full">
-            <div className="p-3 bg-amber-50 dark:bg-amber-900/40 rounded-xl group-hover:scale-110 transition-transform">
-              <Inbox size={28} className="text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <h3 className="font-bold text-surface-900 dark:text-surface-50">Unified Inbox</h3>
-              <p className="text-sm text-surface-500 dark:text-surface-400">Check new replies</p>
-            </div>
-          </div>
-        </Link>
-        
-        <Link href="/analytics" className="skeu-card shadow-skeu-base border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 hover:border-indigo-300 hover:shadow-skeu-raised transition-all group">
-          <div className="flex items-center gap-4 h-full">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/40 rounded-xl group-hover:scale-110 transition-transform">
-              <BarChart2 size={28} className="text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h3 className="font-bold text-surface-900 dark:text-surface-50">Analytics</h3>
-              <p className="text-sm text-surface-500 dark:text-surface-400">View performance</p>
-            </div>
-          </div>
-        </Link>
-      </div>
+        {/* SECTION 1 - SIGNAL BAR */}
+        <div className="bg-primary-base text-primary-text px-6 py-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="animate-pulse w-2 h-2 rounded-full bg-emerald-400 shrink-0"></div>
+            <div className="text-sm md:text-base">
+              {openRateJump > 0 ? (
+                <span className="font-bold">
+                  Your open rate jumped {openRateJump}pts this week.{" "}
+                </span>
+              ) : openRateJump < 0 ? (
+                <span className="font-bold">
+                  Your open rate dropped {Math.abs(openRateJump)}pts this
+                  week.{" "}
+                </span>
+              ) : (
+                <span className="font-bold">
+                  Your open rate is holding steady at {openRate}%.{" "}
+                </span>
+              )}
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Recent Activity / Campaigns */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Recent Campaigns</h2>
-            <Link href="/campaigns" className="text-sm font-semibold text-ice-600 hover:text-ice-700">View All &rarr;</Link>
+              <span className="opacity-80">
+                {recentWarmRecipients.length > 0
+                  ? `${recentWarmRecipients.length} warm accounts opened but never replied — follow up now.`
+                  : "No urgent warm leads right now. Keep sending!"}
+              </span>
+            </div>
           </div>
-          
-          <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl shadow-skeu-base overflow-hidden">
-            {recentCampaigns.length === 0 ? (
-              <div className="p-8 text-center text-surface-500">
-                <Clock size={48} className="mx-auto mb-4 text-surface-300 dark:text-surface-600" />
-                <p>No campaigns created yet.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-surface-200 dark:divide-surface-700">
-                {recentCampaigns.map(campaign => (
-                  <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="block p-5 hover:bg-surface-50 dark:hover:bg-surface-700/50 transition">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-bold text-surface-900 dark:text-surface-50">{campaign.name}</h3>
-                        <span className={`px-2 py-0.5 text-xs font-bold rounded-full uppercase tracking-wider
-                          ${campaign.status === 'DONE' ? 'bg-emerald-100 text-emerald-800' : 
-                            campaign.status === 'SENDING' ? 'bg-ice-100 text-ice-800' : 
-                            'bg-surface-100 text-surface-600'}`}>
-                          {campaign.status}
-                        </span>
-                      </div>
-                      <span className="text-xs text-surface-400 font-medium">{new Date(campaign.createdAt).toLocaleDateString()}</span>
+          <Link
+            href="/inbox"
+            className="border border-primary-text text-primary-text rounded-md px-4 py-2 text-sm font-medium hover:bg-primary-text/10 hover:opacity-80 transition-all whitespace-nowrap shrink-0"
+          >
+            Follow up now &rarr;
+          </Link>
+        </div>
+
+        {/* SECTION 2 - STAT ROW */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">SENT TODAY</div>
+            <div className="value">{sentToday}</div>
+            <div className="sub text-text-muted">
+              {dailyLimitPercent}% of daily limit
+            </div>
+          </Card>
+          <Card className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">OPEN RATE</div>
+            <div className="value">{openRate}%</div>
+            <div
+              className={
+                openRateJump >= 0
+                  ? "sub text-emerald-500"
+                  : "sub text-amber-500"
+              }
+            >
+              {openRateJump >= 0 ? "&uarr;" : "&darr;"} {Math.abs(openRateJump)}
+              pts vs last week
+            </div>
+          </Card>
+          <Card className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">REPLY RATE</div>
+            <div className="value">{replyRate}%</div>
+            <div
+              className={
+                replyRateNum >= 10
+                  ? "sub text-emerald-500 flex justify-center items-center gap-1"
+                  : "sub text-amber-500 flex justify-center items-center gap-1"
+              }
+            >
+              {replyRateNum < 10 && <span>&#9888;</span>}{" "}
+              {replyRateNum >= 10 ? "Above 10% target" : "Below 10% target"}
+            </div>
+          </Card>
+          <Card className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">WARM LEADS</div>
+            <div className="value">{warmLeadsCount}</div>
+            <div className="sub text-emerald-500">
+              {recentWarmRecipients.length} need response today
+            </div>
+          </Card>
+        </div>
+
+        {/* SECTION 3 - TWO-COLUMN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          {/* LEFT COLUMN (ratio 3) */}
+          <div className="lg:col-span-3 space-y-4">
+            <div className="flex justify-between items-center px-1">
+              <h2 className="text-xs font-semibold tracking-widest text-text-muted uppercase">
+                NEEDS YOUR ATTENTION
+              </h2>
+              <Link
+                href="/campaigns"
+                className="text-xs text-text-muted hover:text-text-primary transition-colors"
+              >
+                All activity &rarr;
+              </Link>
+            </div>
+
+            <Card className="skeu-card p-0 divide-y divide-border-subtle overflow-hidden">
+              {topFeed.length === 0 ? (
+                <div className="p-8 text-center text-text-muted">
+                  <p>All caught up! No urgent items.</p>
+                </div>
+              ) : (
+                topFeed.map((item, idx) => (
+                  <Link
+                    href={item.link}
+                    key={idx}
+                    className="flex items-start gap-3 py-3 px-4 hover:bg-bg-subtle/50 transition-colors block cursor-pointer"
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-sm shrink-0 ${
+                        item.type === "reply"
+                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700"
+                          : item.type === "warm"
+                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700"
+                            : item.type === "draft"
+                              ? "bg-bg-subtle text-text-muted"
+                              : "bg-danger-bg text-danger-text"
+                      }`}
+                    >
+                      {item.initial}
                     </div>
-                    <div className="flex gap-6 text-sm text-surface-600 dark:text-surface-400">
-                      <div className="flex items-center gap-1">
-                        <Mail size={14} /> {campaign._count.recipients} Recipients
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Inbox size={14} /> {campaign._count.replies} Replies
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-text-primary truncate">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-text-muted truncate">
+                        {item.subtitle}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-xs text-text-muted">
+                        {timeAgo(item.date)}
+                      </span>
+                      {item.type === "reply" && (
+                        <span className="skeu-badge skeu-badge-replied">
+                          Reply
+                        </span>
+                      )}
+                      {item.type === "warm" && (
+                        <span className="skeu-badge bg-amber-100 text-amber-700 border-transparent dark:bg-amber-900/30">
+                          Warm
+                        </span>
+                      )}
+                      {item.type === "draft" && (
+                        <span className="skeu-badge skeu-badge-draft">
+                          Draft
+                        </span>
+                      )}
+                      {item.type === "fix" && (
+                        <span className="skeu-badge skeu-badge-failed">
+                          Fix
+                        </span>
+                      )}
                     </div>
                   </Link>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </Card>
           </div>
-        </div>
 
-        {/* Setup Guide / Quick Actions */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-surface-900 dark:text-surface-50">Quick Actions</h2>
-          <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl shadow-skeu-base p-6 space-y-4">
-            <Link href="/templates" className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-50 dark:hover:bg-surface-700 transition group">
-              <div className="w-10 h-10 rounded-lg bg-surface-100 dark:bg-surface-700 flex items-center justify-center text-surface-600 dark:text-surface-400 group-hover:bg-white group-hover:shadow-sm transition">
-                <CheckCircle2 size={20} />
-              </div>
-              <div>
-                <h4 className="font-semibold text-surface-900 dark:text-surface-50">Create Templates</h4>
-                <p className="text-xs text-surface-500">Draft AI-powered templates</p>
-              </div>
-            </Link>
-            
-            <Link href="/accounts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-50 dark:hover:bg-surface-700 transition group">
-              <div className="w-10 h-10 rounded-lg bg-surface-100 dark:bg-surface-700 flex items-center justify-center text-surface-600 dark:text-surface-400 group-hover:bg-white group-hover:shadow-sm transition">
-                <Server size={20} />
-              </div>
-              <div>
-                <h4 className="font-semibold text-surface-900 dark:text-surface-50">Connect Accounts</h4>
-                <p className="text-xs text-surface-500">Add sending domains & Gmail</p>
-              </div>
-            </Link>
-
-            <div className="pt-4 mt-2 border-t border-surface-200 dark:border-surface-700">
-              <div className="p-4 bg-ice-50 dark:bg-ice-900/20 rounded-xl border border-ice-100 dark:border-ice-800">
-                <h4 className="font-bold text-ice-800 dark:text-ice-200 mb-1 flex items-center gap-1">
-                  <Play size={16} /> Deliverability Tips
-                </h4>
-                <p className="text-xs text-ice-700 dark:text-ice-300 leading-relaxed">
-                  Keep your daily sending volume under 50 emails per account initially to protect your domain reputation.
+          {/* RIGHT COLUMN (ratio 2) */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Top Right */}
+            <Card className="skeu-card">
+              <div className="mb-4">
+                <h2 className="text-xs font-semibold tracking-widest text-text-muted uppercase">
+                  CAMPAIGN PERFORMANCE
+                </h2>
+                <p className="text-xs text-text-muted mt-0.5">
+                  All time &middot; open rate
                 </p>
               </div>
-            </div>
+              <div className="space-y-1">
+                {campaignPerformance.length === 0 ? (
+                  <p className="text-sm text-text-muted py-2">
+                    No active campaigns yet.
+                  </p>
+                ) : (
+                  campaignPerformance.map((cp) => (
+                    <div key={cp.id} className="flex items-center gap-3 py-2">
+                      <div
+                        className="text-sm text-text-primary font-medium w-20 shrink-0 truncate"
+                        title={cp.name}
+                      >
+                        {cp.name}
+                      </div>
+                      <div className="flex-1 skeu-progress-bar">
+                        <div style={{ width: `${cp.openRate}%` }}></div>
+                      </div>
+                      <div className="text-sm font-semibold text-text-primary w-10 text-right">
+                        {cp.openRate}%
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+
+            {/* Bottom Right */}
+            <Card className="skeu-card p-4 border-none  -none">
+              <div className="flex flex-col">
+                <Link
+                  href="/inbox"
+                  className="skeu-nav-item border-b border-border-subtle last:border-0 py-3 rounded-none bg-transparent hover:bg-bg-subtle"
+                >
+                  <Inbox size={16} />
+                  <span>Inbox</span>
+                  {unreadReplies.length > 0 && (
+                    <span className="bg-primary-base text-primary-text rounded-full px-1.5 py-0.5 text-[10px] ml-1 font-bold leading-none flex items-center justify-center">
+                      {unreadReplies.length}
+                    </span>
+                  )}
+                  <span className="text-text-muted ml-auto">&rarr;</span>
+                </Link>
+                <Link
+                  href="/accounts"
+                  className="skeu-nav-item border-b border-border-subtle last:border-0 py-3 rounded-none bg-transparent hover:bg-bg-subtle"
+                >
+                  <Users size={16} />
+                  <span>Accounts</span>
+                  <span className="text-text-muted ml-auto">&rarr;</span>
+                </Link>
+                <Link
+                  href="/analytics"
+                  className="skeu-nav-item border-b border-border-subtle last:border-0 py-3 rounded-none bg-transparent hover:bg-bg-subtle"
+                >
+                  <BarChart2 size={16} />
+                  <span>Analytics</span>
+                  <span className="text-text-muted ml-auto">&rarr;</span>
+                </Link>
+                <Link
+                  href="/settings"
+                  className="skeu-nav-item border-b border-border-subtle last:border-0 py-3 rounded-none bg-transparent hover:bg-bg-subtle"
+                >
+                  <Settings size={16} />
+                  <span>Settings</span>
+                  <span className="text-text-muted ml-auto">&rarr;</span>
+                </Link>
+              </div>
+            </Card>
           </div>
         </div>
-
       </div>
     </div>
-  )
+  );
 }

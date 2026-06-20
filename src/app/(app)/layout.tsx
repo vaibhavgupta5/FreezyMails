@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen overflow-hidden skeu-page bg-surface-50 text-surface-900">
+    <div className="flex h-[100dvh] overflow-hidden skeu-page bg-surface-50 text-surface-900">
       <Sidebar user={user} />
       
       {/* Main Content */}

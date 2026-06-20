@@ -7,7 +7,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   const user = await getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const campaign = await prisma.campaign.findUnique({ where: { id: params.id, userId: user.id } })
+  const campaign = await prisma.campaign.findUnique({ 
+    where: { id: params.id, userId: user.id },
+    include: { emailAccounts: true }
+  })
   if (!campaign) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const newCampaign = await prisma.campaign.create({
@@ -15,7 +18,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       userId: user.id,
       name: `${campaign.name} (copy)`,
       templateId: campaign.templateId,
-      emailAccountId: campaign.emailAccountId,
+      emailAccounts: {
+        connect: campaign.emailAccounts.map(ea => ({ id: ea.id }))
+      },
       status: 'DRAFT'
     }
   })

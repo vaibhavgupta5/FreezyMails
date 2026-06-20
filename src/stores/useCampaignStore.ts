@@ -9,22 +9,31 @@ interface CampaignDraftState {
   inputMode: 'paste' | 'table';
   name: string;
   templateId: string;
-  accountId: string;
+  accountIds: string[];
   recipientsText: string;
   parsedRecipients: ParsedRecipient[];
   validationErrors: Record<number, string[]>;
   isValid: boolean;
   globalError: string;
-  variants: { subject: string; body: string }[];
+  sendWindowStart: number | null;
+  sendWindowEnd: number | null;
+  timezone: string;
+  templateVariants: { name: string; body: string; splitPercent: number; subjectVariants: { name: string; subject: string; splitPercent: number }[] }[];
+  sequenceSteps: { id?: string; stepIndex: number; delayDays: number; subject: string; body: string }[];
+  scheduledAt: string | null;
   
   // Actions
   setStep: (step: number) => void;
   setInputMode: (mode: 'paste' | 'table') => void;
-  setDetails: (name: string, templateId: string, accountId: string) => void;
+  setDetails: (name: string, templateId: string, accountIds: string[]) => void;
   setRecipientsText: (text: string, templates: Template[]) => void;
   setGlobalError: (error: string) => void;
-  setVariants: (variants: { subject: string; body: string }[]) => void;
+  setTemplateVariants: (templateVariants: { name: string; body: string; splitPercent: number; subjectVariants: { name: string; subject: string; splitPercent: number }[] }[]) => void;
+  setSequenceSteps: (sequenceSteps: { id?: string; stepIndex: number; delayDays: number; subject: string; body: string }[]) => void;
+  setSchedule: (start: number | null, end: number | null, tz: string) => void;
   resetDraft: () => void;
+  loadCampaign: (campaign: any, recipients: any[], templates: Template[]) => void;
+  setScheduledAt: (date: string | null) => void;
 }
 
 export const useCampaignStore = create<CampaignDraftState>()(
@@ -34,21 +43,32 @@ export const useCampaignStore = create<CampaignDraftState>()(
       inputMode: 'table',
       name: '',
       templateId: '',
-      accountId: '',
+      accountIds: [],
       recipientsText: '',
       parsedRecipients: [],
       validationErrors: {},
       isValid: false,
       globalError: '',
-      variants: [],
+      sendWindowStart: null,
+      sendWindowEnd: null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      templateVariants: [],
+      sequenceSteps: [],
+      scheduledAt: null,
 
       setStep: (step) => set({ step }),
       
       setInputMode: (inputMode) => set({ inputMode }),
       
-      setDetails: (name, templateId, accountId) => set({ name, templateId, accountId }),
+      setDetails: (name, templateId, accountIds) => set({ name, templateId, accountIds }),
       
-      setVariants: (variants) => set({ variants }),
+      setTemplateVariants: (templateVariants) => set({ templateVariants }),
+
+      setSequenceSteps: (sequenceSteps) => set({ sequenceSteps }),
+      
+      setScheduledAt: (date) => set({ scheduledAt: date }),
+
+      setSchedule: (start, end, tz) => set({ sendWindowStart: start, sendWindowEnd: end, timezone: tz }),
       
       setRecipientsText: (text, templates) => {
         set({ recipientsText: text });
@@ -109,14 +129,68 @@ export const useCampaignStore = create<CampaignDraftState>()(
         inputMode: 'table',
         name: '',
         templateId: '',
-        accountId: '',
+        accountIds: [],
         recipientsText: '',
         parsedRecipients: [],
         validationErrors: {},
         isValid: false,
         globalError: '',
-        variants: []
-      })
+        sendWindowStart: null,
+        sendWindowEnd: null,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        templateVariants: [],
+        sequenceSteps: [],
+        scheduledAt: null
+      }),
+
+      loadCampaign: (campaign, recipients, templates) => {
+        const accountIds = campaign.emailAccounts?.map((a: any) => a.id) || [];
+        
+        let recipientsText = '';
+        const selectedTemplate = templates.find((t: Template) => t.id === campaign.templateId);
+        const requiredHeaders = selectedTemplate 
+          ? ['email', ...((selectedTemplate.variables as string[]) || [])] 
+          : ['email'];
+
+        if (recipients && recipients.length > 0) {
+          const rows = recipients.map((r: any) => {
+            const vals = requiredHeaders.map(h => {
+              if (h === 'email') return r.email;
+              const vars = typeof r.dynamicData === 'string' ? JSON.parse(r.dynamicData || '{}') : (r.dynamicData || {});
+              return vars[h] || '';
+            });
+            return vals.join('\t');
+          });
+          recipientsText = rows.join('\n');
+        }
+
+        const templateVariants = campaign.abTemplateVariants?.map((tv: any) => ({
+          name: tv.name,
+          body: tv.body,
+          splitPercent: tv.splitPercent || 0,
+          subjectVariants: tv.subjectVariants?.map((sv: any) => ({
+            name: sv.name,
+            subject: sv.subject,
+            splitPercent: sv.splitPercent || 0
+          })) || []
+        })) || [];
+
+        set({
+          step: 1,
+          name: campaign.name || '',
+          templateId: campaign.templateId || '',
+          accountIds,
+          templateVariants,
+          recipientsText,
+          sendWindowStart: campaign.sendWindowStart,
+          sendWindowEnd: campaign.sendWindowEnd,
+          timezone: campaign.timezone || 'UTC',
+          scheduledAt: campaign.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : null
+        });
+        
+        // This will trigger the validation logic to re-run and set parsedRecipients
+        get().setRecipientsText(recipientsText, templates);
+      }
     }),
     {
       name: 'campaign-draft-storage',
@@ -125,8 +199,11 @@ export const useCampaignStore = create<CampaignDraftState>()(
         inputMode: state.inputMode,
         name: state.name, 
         templateId: state.templateId, 
-        accountId: state.accountId, 
-        recipientsText: state.recipientsText 
+        accountIds: state.accountIds, 
+        recipientsText: state.recipientsText,
+        sendWindowStart: state.sendWindowStart,
+        sendWindowEnd: state.sendWindowEnd,
+        timezone: state.timezone
       }), // only persist form values, validation can be re-run
     }
   )

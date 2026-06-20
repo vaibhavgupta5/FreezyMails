@@ -8,7 +8,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { variantId } = await request.json()
+    const { templateVariantId, subjectVariantId } = await request.json()
     
     const campaign = await prisma.campaign.findUnique({
       where: { id: params.id, userId: user.id }
@@ -16,19 +16,27 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     if (!campaign) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const variant = await prisma.aBVariant.findUnique({
-      where: { id: variantId, campaignId: campaign.id }
+    const tVariant = await prisma.aBTemplateVariant.findUnique({
+      where: { id: templateVariantId, campaignId: campaign.id }
+    })
+    
+    const sVariant = await prisma.aBSubjectVariant.findUnique({
+      where: { id: subjectVariantId, templateVariantId: templateVariantId }
     })
 
-    if (!variant) return NextResponse.json({ error: 'Variant not found' }, { status: 404 })
+    if (!tVariant || !sVariant) return NextResponse.json({ error: 'Variant not found' }, { status: 404 })
 
     await prisma.$transaction([
       prisma.campaign.update({
         where: { id: campaign.id },
-        data: { winnerVariantId: variant.id }
+        data: { winnerTemplateVariantId: tVariant.id, winnerSubjectVariantId: sVariant.id }
       }),
-      prisma.aBVariant.update({
-        where: { id: variant.id },
+      prisma.aBTemplateVariant.update({
+        where: { id: tVariant.id },
+        data: { isWinner: true }
+      }),
+      prisma.aBSubjectVariant.update({
+        where: { id: sVariant.id },
         data: { isWinner: true }
       })
     ])
@@ -41,7 +49,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       const dynamicData = (recipient.dynamicData as Record<string, unknown>) || {}
       return prisma.recipient.update({
         where: { id: recipient.id },
-        data: { dynamicData: { ...dynamicData, _variantId: variant.id } }
+        data: { dynamicData: { ...dynamicData, _templateVariantId: tVariant.id, _subjectVariantId: sVariant.id } }
       })
     }))
 

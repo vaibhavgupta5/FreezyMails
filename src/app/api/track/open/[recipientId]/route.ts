@@ -32,6 +32,28 @@ export async function GET(request: Request, props: { params: Promise<{ recipient
             type: MailEventType.OPENED
           }
         })
+
+        const dynamicData = recipient.dynamicData as Record<string, unknown> || {}
+        const tVariantId = dynamicData._templateVariantId as string | undefined
+        const sVariantId = dynamicData._subjectVariantId as string | undefined
+
+        const updatePromises = []
+        if (tVariantId) {
+          updatePromises.push(prisma.aBTemplateVariant.update({
+            where: { id: tVariantId },
+            data: { openCount: { increment: 1 } }
+          }))
+        }
+        if (sVariantId) {
+          updatePromises.push(prisma.aBSubjectVariant.update({
+            where: { id: sVariantId },
+            data: { openCount: { increment: 1 } }
+          }))
+        }
+
+        if (updatePromises.length > 0) {
+          await prisma.$transaction(updatePromises)
+        }
       }
     }
   } catch (error) {

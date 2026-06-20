@@ -48,20 +48,40 @@ export async function GET(request: Request) {
     const fromName = profile.name || profile.given_name || 'Google Account'
 
     // Save to database
-    await prisma.emailAccount.create({
-      data: {
-        userId: currentUser.id,
-        provider: 'google',
-        label: fromEmail,
-        fromName,
-        fromEmail,
-        accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-        refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-        tokenExpiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
-        isActive: true,
-        healthScore: 100
-      }
+    const existing = await prisma.emailAccount.findFirst({
+      where: { userId: currentUser.id, fromEmail }
     })
+
+    if (existing) {
+      await prisma.emailAccount.update({
+        where: { id: existing.id },
+        data: {
+          provider: 'google',
+          label: fromEmail,
+          fromName,
+          accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
+          refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : existing.refreshToken,
+          tokenExpiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
+          isActive: true,
+          healthScore: 100
+        }
+      })
+    } else {
+      await prisma.emailAccount.create({
+        data: {
+          userId: currentUser.id,
+          provider: 'google',
+          label: fromEmail,
+          fromName,
+          fromEmail,
+          accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
+          refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
+          tokenExpiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
+          isActive: true,
+          healthScore: 100
+        }
+      })
+    }
 
     return NextResponse.redirect(`${origin}/accounts?success=google_connected`)
 

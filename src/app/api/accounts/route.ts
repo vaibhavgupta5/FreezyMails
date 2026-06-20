@@ -52,29 +52,65 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = accountSchema.parse(body)
 
-    const account = await prisma.emailAccount.create({
-      data: {
-        userId: user.id,
-        label: data.label,
-        fromName: data.fromName,
-        fromEmail: data.fromEmail,
-        smtpHost: data.smtpHost,
-        smtpPort: data.smtpPort,
-        smtpUser: data.smtpUser,
-        smtpPassEncrypted: encryptString(data.smtpPass),
-        imapHost: data.imapHost,
-        imapPort: data.imapPort,
-        imapUser: data.imapUser,
-        imapPassEncrypted: encryptString(data.imapPass),
-      },
-      select: {
-        id: true,
-        label: true,
-        fromEmail: true,
-        smtpHost: true,
-        isActive: true,
-      }
+    const existing = await prisma.emailAccount.findFirst({
+      where: { userId: user.id, fromEmail: data.fromEmail }
     })
+
+    let account;
+    if (existing) {
+      account = await prisma.emailAccount.update({
+        where: { id: existing.id },
+        data: {
+          label: data.label,
+          fromName: data.fromName,
+          smtpHost: data.smtpHost,
+          smtpPort: data.smtpPort,
+          smtpUser: data.smtpUser,
+          smtpPassEncrypted: encryptString(data.smtpPass),
+          imapHost: data.imapHost,
+          imapPort: data.imapPort,
+          imapUser: data.imapUser,
+          imapPassEncrypted: encryptString(data.imapPass),
+          provider: 'smtp',
+          isActive: true,
+          healthScore: 100
+        },
+        select: {
+          id: true,
+          label: true,
+          fromEmail: true,
+          smtpHost: true,
+          isActive: true,
+        }
+      })
+    } else {
+      account = await prisma.emailAccount.create({
+        data: {
+          userId: user.id,
+          label: data.label,
+          fromName: data.fromName,
+          fromEmail: data.fromEmail,
+          smtpHost: data.smtpHost,
+          smtpPort: data.smtpPort,
+          smtpUser: data.smtpUser,
+          smtpPassEncrypted: encryptString(data.smtpPass),
+          imapHost: data.imapHost,
+          imapPort: data.imapPort,
+          imapUser: data.imapUser,
+          imapPassEncrypted: encryptString(data.imapPass),
+          provider: 'smtp',
+          isActive: true,
+          healthScore: 100
+        },
+        select: {
+          id: true,
+          label: true,
+          fromEmail: true,
+          smtpHost: true,
+          isActive: true,
+        }
+      })
+    }
 
     return NextResponse.json(account)
   } catch (_err: unknown) { const err = _err as Error;

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CampaignStatRow } from '@/types'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export default function CampaignStatsTable({ data }: { data: CampaignStatRow[] }) {
   const [sortField, setSortField] = useState('createdAt')
@@ -30,22 +31,22 @@ export default function CampaignStatsTable({ data }: { data: CampaignStatRow[] }
       : <ArrowDown size={14} className="text-ice-600" />
   }
 
-  const thClass = "px-4 py-3 border-b border-surface-200 dark:border-surface-700 text-left text-sm font-semibold text-surface-700 dark:text-surface-300 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition select-none"
+  const thClass = "cursor-pointer select-none font-semibold text-text-primary hover:bg-bg-subtle transition"
 
   const renderTh = (field: string, label: string) => (
-    <th className={thClass} onClick={() => handleSort(field)}>
+    <TableHead className={thClass} onClick={() => handleSort(field)}>
       <div className="flex items-center gap-1">
         {label}
         {getSortIcon(field)}
       </div>
-    </th>
+    </TableHead>
   )
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-surface-200 dark:border-surface-700 shadow-sm">
-      <table className="w-full text-left border-collapse bg-white dark:bg-surface-900">
-        <thead className="bg-surface-100 dark:bg-surface-800">
-          <tr>
+    <div className="skeu-card overflow-hidden">
+      <Table>
+        <TableHeader className="bg-bg-subtle border-b border-border-subtle">
+          <TableRow className="hover:bg-transparent">
             {renderTh('name', 'Campaign Name')}
             {renderTh('sent', 'Sent')}
             {renderTh('opened', 'Opened')}
@@ -54,23 +55,23 @@ export default function CampaignStatsTable({ data }: { data: CampaignStatRow[] }
             {renderTh('replyRate', 'Reply %')}
             {renderTh('failed', 'Failed')}
             {renderTh('createdAt', 'Date')}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {sortedData.map(row => (
-            <tr key={row.id} className="hover:bg-surface-50 dark:hover:bg-surface-800 transition border-b border-surface-100 dark:border-surface-800 last:border-0">
-              <td className="px-4 py-3 text-surface-900 dark:text-surface-50 font-medium">{row.name}</td>
-              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.sent}</td>
-              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.opened}</td>
-              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.openRate.toFixed(1)}%</td>
-              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.replied}</td>
-              <td className="px-4 py-3 text-surface-700 dark:text-surface-300">{row.replyRate.toFixed(1)}%</td>
-              <td className="px-4 py-3 text-red-600 font-medium">{row.failed}</td>
-              <td className="px-4 py-3 text-sm text-surface-500 dark:text-surface-400">{new Date(row.createdAt).toLocaleDateString()}</td>
-            </tr>
+            <TableRow key={row.id}>
+              <TableCell className="font-medium text-text-primary">{row.name}</TableCell>
+              <TableCell>{row.sent}</TableCell>
+              <TableCell>{row.opened}</TableCell>
+              <TableCell>{row.openRate.toFixed(1)}%</TableCell>
+              <TableCell>{row.replied}</TableCell>
+              <TableCell>{row.replyRate.toFixed(1)}%</TableCell>
+              <TableCell className="text-red-600 font-medium">{row.failed}</TableCell>
+              <TableCell className="text-text-muted">{new Date(row.createdAt).toLocaleDateString()}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

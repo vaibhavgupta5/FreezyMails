@@ -15,7 +15,7 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
       where: { id: campaignId, userId: user.id },
       include: {
         recipients: { where: { status: 'PENDING' } },
-        emailAccount: true,
+        emailAccounts: true,
       }
     })
 
@@ -31,61 +31,94 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
     await startBoss()
 
     // Rate limiting logic
-    const account = campaign.emailAccount
+    const accounts = campaign.emailAccounts
+    if (accounts.length === 0) {
+      return NextResponse.json({ error: 'No email accounts associated with this campaign' }, { status: 400 })
+    }
+
     const now = new Date()
-    let currentSentCount = account.dailySentCount
     
-    // Check if daily reset is needed
-    const lastReset = account.dailySentResetAt
-    if (!lastReset || now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) {
-      currentSentCount = 0
+    // Calculate quota for each account
+    const accountQuotas = accounts.map(account => {
+      let currentSentCount = account.dailySentCount
+      const lastReset = account.dailySentResetAt
+      if (!lastReset || now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) {
+        currentSentCount = 0
+      }
+
+      const defaultLimit = account.provider === 'google' ? 50 : 200
+      const limit = campaign.dailyLimit || Math.min(defaultLimit, account.warmupDay * 25)
+      
+      return {
+        ...account,
+        currentSentCount,
+        availableQuota: Math.max(0, limit - currentSentCount),
+        jobsAssigned: 0,
+        isGmail: account.provider === 'google',
+        delaySeconds: 0
+      }
+    })
+
+    const totalQuota = accountQuotas.reduce((sum, a) => sum + a.availableQuota, 0)
+    
+    if (totalQuota <= 0) {
+      return NextResponse.json({ error: 'Daily send limit reached for all selected accounts. Try again tomorrow.' }, { status: 429 })
     }
 
-    const defaultLimit = account.provider === 'google' ? 50 : 200
-    const limit = campaign.dailyLimit || Math.min(defaultLimit, account.warmupDay * 25)
+    // Only process up to totalQuota recipients
+    const recipientsToProcess = campaign.recipients.slice(0, totalQuota)
     
-    const availableQuota = limit - currentSentCount
-    
-    if (availableQuota <= 0) {
-      return NextResponse.json({ error: 'Daily send limit reached for this account. Try again tomorrow.' }, { status: 429 })
-    }
+    const jobs = []
+    let accountIndex = 0
 
-    // Only process up to availableQuota recipients
-    const recipientsToProcess = campaign.recipients.slice(0, availableQuota)
+    for (const recipient of recipientsToProcess) {
+      // Find next available account
+      let account = accountQuotas[accountIndex]
+      let loopCount = 0
+      while (account.availableQuota <= 0 && loopCount < accountQuotas.length) {
+        accountIndex = (accountIndex + 1) % accountQuotas.length
+        account = accountQuotas[accountIndex]
+        loopCount++
+      }
 
-    const isGmail = account.provider === 'google'
-    let delaySeconds = 0
+      if (account.availableQuota <= 0) break // Should not happen given totalQuota check
 
-    const jobs = recipientsToProcess.map((recipient) => {
       const payload = {
         recipientId: recipient.id,
         campaignId: campaign.id,
-        accountId: campaign.emailAccountId,
-        variantId: (recipient.dynamicData as Record<string, unknown>)?._variantId as string | undefined || null
+        accountId: account.id,
+        templateVariantId: (recipient.dynamicData as Record<string, unknown>)?._templateVariantId as string | undefined || null,
+        subjectVariantId: (recipient.dynamicData as Record<string, unknown>)?._subjectVariantId as string | undefined || null
       }
       
       const jobSpec: { data: typeof payload; options: { retryLimit: number; retryBackoff: boolean; startAfter?: number } } = { data: payload, options: { retryLimit: 3, retryBackoff: true } }
       
-      if (isGmail) {
-        jobSpec.options.startAfter = delaySeconds
-        delaySeconds += 2 // Stagger by 2 seconds
+      if (account.isGmail) {
+        jobSpec.options.startAfter = account.delaySeconds
+        account.delaySeconds += 2 // Stagger by 2 seconds per account
       }
 
-      return jobSpec
-    })
+      jobs.push(jobSpec)
+      account.availableQuota--
+      account.jobsAssigned++
+      
+      accountIndex = (accountIndex + 1) % accountQuotas.length
+    }
 
     await prisma.$transaction([
       prisma.campaign.update({
         where: { id: campaignId },
         data: { status: 'SENDING' }
       }),
-      prisma.emailAccount.update({
-        where: { id: account.id },
-        data: {
-          dailySentCount: currentSentCount + jobs.length,
-          dailySentResetAt: now
-        }
-      })
+      ...accountQuotas.filter(a => a.jobsAssigned > 0).map(account => 
+        prisma.emailAccount.update({
+          where: { id: account.id },
+          data: {
+            dailySentCount: account.currentSentCount + account.jobsAssigned,
+            dailySentResetAt: now
+          }
+        })
+      )
     ])
 
     await boss.insert(JOB_SEND_EMAIL, jobs)

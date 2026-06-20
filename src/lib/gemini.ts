@@ -44,7 +44,7 @@ Return ONLY a valid JSON array of strings, for example: ["subject 1", "subject 2
   }
 }
 
-export async function suggestReply(originalEmail: string, replyReceived: string): Promise<string> {
+export async function suggestReply(originalEmail: string, replyReceived: string, instruction?: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
   
   const prompt = `I sent this cold email:
@@ -53,7 +53,7 @@ ${originalEmail}
 The prospect replied:
 ${replyReceived}
 
-Write a short, natural follow-up reply. Return plain text only.`
+${instruction || 'Write a short, natural follow-up reply. Return plain text only.'}`
 
   const result = await model.generateContent(prompt)
   const response = await result.response

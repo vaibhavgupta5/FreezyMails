@@ -16,9 +16,10 @@ https.globalAgent.options.lookup = (hostname: string, options, callback) => {
 console.log('dns order:', dns.getDefaultResultOrder()); // should print 'ipv4first'
 
 import http from 'http'
-import boss, { JOB_SEND_EMAIL, JOB_POLL_IMAP } from '../lib/queue'
+import boss, { JOB_SEND_EMAIL, JOB_POLL_IMAP, JOB_SYNC_GMAIL } from '../lib/queue'
 import { handleSendEmail } from './send-handler'
 import { handleImapPoll } from './imap-handler'
+import { handleGmailSync } from './gmail-sync-handler'
 
 async function startWorker() {
   console.log('Starting pg-boss worker...')
@@ -43,9 +44,11 @@ async function startWorker() {
   console.log('Registering worker handlers...')
   await boss.createQueue(JOB_SEND_EMAIL)
   await boss.createQueue(JOB_POLL_IMAP)
+  await boss.createQueue(JOB_SYNC_GMAIL)
   
   await boss.work(JOB_SEND_EMAIL, { localConcurrency: 5 }, handleSendEmail)
   await boss.work(JOB_POLL_IMAP, { localConcurrency: 2 }, handleImapPoll)
+  await boss.work(JOB_SYNC_GMAIL, { localConcurrency: 3 }, handleGmailSync)
   console.log('Handlers registered.')
 
   const port = process.env.PORT || 8080

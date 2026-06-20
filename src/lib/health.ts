@@ -4,7 +4,7 @@ export async function computeHealthScore(accountId: string): Promise<number> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
   const campaigns = await prisma.campaign.findMany({
-    where: { emailAccountId: accountId },
+    where: { emailAccounts: { some: { id: accountId } } },
     select: { id: true }
   })
   const campaignIds = campaigns.map(c => c.id)

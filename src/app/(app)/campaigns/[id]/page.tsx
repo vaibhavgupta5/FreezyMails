@@ -8,16 +8,60 @@ import {
   Copy,
   RotateCcw,
   Beaker,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Mail,
+  Calendar,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Inbox,
+  Edit
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import PageSkeleton from "../../_components/PageSkeleton";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
+interface CampaignAttachment {
+  filename: string;
+}
+
+interface Recipient {
+  id: string;
+  email: string;
+  status: string;
+  sentAt?: string | null;
+  failReason?: string | null;
+}
 
 interface CampaignData {
+  id: string;
   name: string;
   status: string;
-  template?: { subject: string };
+  dailyLimit?: number | null;
+  createdAt: string;
+  scheduledAt?: string | null;
+  template?: { name: string; subject: string; body: string; attachments?: CampaignAttachment[] };
   abEnabled?: boolean;
-  abVariants?: { id: string; name: string; subject: string; body: string; isWinner: boolean; openCount: number; replyCount: number; }[];
+  emailAccounts?: { id: string; label: string; fromEmail: string }[];
+  abTemplateVariants?: {
+    id: string;
+    name: string;
+    body: string;
+    isWinner: boolean;
+    openCount: number;
+    replyCount: number;
+    subjectVariants: {
+      id: string;
+      name: string;
+      subject: string;
+      isWinner: boolean;
+      openCount: number;
+      replyCount: number;
+    }[];
+  }[];
   totalRecipients?: number;
   error?: string;
 }
@@ -38,18 +82,30 @@ export default function CampaignPage() {
   const [data, setData] = useState<CampaignData | null>(null);
   const [progress, setProgress] = useState<CampaignProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchCampaign = async () => {
-    const res = await fetch(`/api/campaigns/${id}`);
-    const json = await res.json();
-    setData(json);
-    setLoading(false);
-  };
+  // Recipients tracking
+  const [showRecipients, setShowRecipients] = useState(false);
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   useEffect(() => {
-    // eslint-disable-next-line
-    fetchCampaign();
-  }, [id]);
+    let active = true;
+    const loadCampaign = async () => {
+      const res = await fetch(`/api/campaigns/${id}`);
+      const json = await res.json();
+      if (active) {
+        setData(json);
+        setLoading(false);
+      }
+    };
+    loadCampaign();
+    return () => {
+      active = false;
+    };
+  }, [id, refreshKey]);
 
   useEffect(() => {
     if (!data) return;
@@ -58,195 +114,630 @@ export default function CampaignPage() {
       const res = await fetch(`/api/campaigns/${id}/progress`);
       const progData = await res.json();
       setProgress(progData);
-      
-      // If the backend says it's done but our local data still says SENDING, refresh
-      if ((progData.status === "DONE" || progData.status === "PAUSED") && data.status === "SENDING") {
-        fetchCampaign();
+
+      if (
+        (progData.status === "DONE" || progData.status === "PAUSED") &&
+        data.status === "SENDING"
+      ) {
+        setRefreshKey((prev) => prev + 1);
       }
     };
 
-    // Always fetch once to get the current stats
     fetchProgress();
 
-    // Only set up a polling loop if the campaign is actively sending
     if (data.status === "SENDING") {
-      const intervalId = setInterval(fetchProgress, 3000);
+      const intervalId = setInterval(fetchProgress, 5000);
       return () => clearInterval(intervalId);
     }
   }, [data?.status, id]);
 
-  const handleAction = async (action: "pause" | "resume" | "duplicate" | "send" | "resendAll" | "resendFailed") => {
+  const handleToggleRecipients = async () => {
+    const nextShow = !showRecipients;
+    setShowRecipients(nextShow);
+    if (nextShow) {
+      setRecipientsLoading(true);
+      try {
+        const res = await fetch(`/api/campaigns/${id}/recipients`);
+        if (!res.ok) throw new Error("Failed to load recipients list");
+        const data = await res.json();
+        setRecipients(data || []);
+      } catch {
+        toast.error("Failed to load recipients list");
+      } finally {
+        setRecipientsLoading(false);
+      }
+    }
+  };
+
+  const handleAction = async (
+    action:
+      | "pause"
+      | "resume"
+      | "duplicate"
+      | "send"
+      | "resendAll"
+      | "resendFailed",
+  ) => {
     try {
       if (action === "resendAll" || action === "resendFailed") {
         const type = action === "resendAll" ? "all" : "failed";
         const resendRes = await fetch(`/api/campaigns/${id}/resend`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type })
+          body: JSON.stringify({ type }),
         });
         if (!resendRes.ok) {
           const err = await resendRes.json().catch(() => ({}));
           throw new Error(err.error || "Failed to reset campaign");
         }
-        
+
         const sendRes = await fetch(`/api/send/${id}`, { method: "POST" });
         if (!sendRes.ok) {
           const err = await sendRes.json().catch(() => ({}));
           throw new Error(err.error || "Failed to start campaign");
         }
-        
+
         toast.success(`Campaign resending to ${type}!`);
-        fetchCampaign();
+        setRefreshKey((prev) => prev + 1);
         return;
       }
 
-      const url = action === "send" ? `/api/send/${id}` : `/api/campaigns/${id}/${action}`;
+      let url = `/api/campaigns/${id}/${action}`;
+      if (action === "send") {
+        url = data?.scheduledAt && new Date(data.scheduledAt) > new Date()
+          ? `/api/campaigns/${id}/schedule`
+          : `/api/send/${id}`;
+      }
+      
       const res = await fetch(url, {
         method: "POST",
       });
-      
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to process request");
       }
-      
+
       if (action === "duplicate") {
         const { newId } = await res.json();
         toast.success("Campaign duplicated!");
         router.push(`/campaigns/${newId}`);
       } else {
-        const actionMap: Record<string, string> = { pause: "paused", resume: "resumed", send: "started" };
+        const actionMap: Record<string, string> = {
+          pause: "paused",
+          resume: "resumed",
+          send: "started",
+        };
         toast.success(`Campaign ${actionMap[action]}!`);
-        fetchCampaign();
+        setRefreshKey((prev) => prev + 1);
       }
-    } catch (_err: unknown) { const err = _err as Error;
+    } catch (_err: unknown) {
+      const err = _err as Error;
       toast.error(err.message || "An error occurred");
     }
   };
 
+  const filteredRecipients = recipients.filter((r) => {
+    const matchesSearch = r.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "ALL" || r.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   if (loading) return <PageSkeleton />;
   if (!data || data.error)
     return (
-      <div className="p-8 text-red-500">
-        Error: {data?.error || "Failed to load"}
+      <div className="p-8 text-danger-text bg-danger-bg rounded-xl border border-border-subtle max-w-xl mx-auto mt-10">
+        Error: {data?.error || "Failed to load campaign data"}
       </div>
     );
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">{data.name}</h1>
-          <span
-            className={`skeu-badge skeu-badge-${data.status.toLowerCase()}`}
-          >
-            {data.status}
-          </span>
-        </div>
-
-        <div className="flex gap-2">
-          {data.status === "SENDING" && (
-            <button
-              onClick={() => handleAction("pause")}
-              className="skeu-btn-ghost flex items-center gap-1"
-            >
-              <Pause size={16} /> Pause
-            </button>
-          )}
-          {(data.status === "DRAFT" || data.status === "PAUSED") && (
-            <button
-              onClick={() => handleAction(data.status === "DRAFT" ? "send" : "resume")}
-              className="skeu-btn-primary flex items-center gap-1"
-            >
-              <Play size={16} /> {data.status === "DRAFT" ? "Start Campaign" : "Resume"}
-            </button>
-          )}
-          {data.status === "DONE" && (
-            <>
-              <button
-                onClick={() => handleAction("resendAll")}
-                className="skeu-btn-primary flex items-center gap-1"
-              >
-                <RotateCcw size={16} /> Resend All
-              </button>
-              {(progress?.failed || 0) > 0 && (
-                <button
-                  onClick={() => handleAction("resendFailed")}
-                  className="skeu-btn-ghost flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <RotateCcw size={16} /> Resend Failed ({progress?.failed})
-                </button>
-              )}
-            </>
-          )}
-          <button
-            onClick={() => handleAction("duplicate")}
-            className="skeu-btn-ghost flex items-center gap-1"
-          >
-            <Copy size={16} /> Duplicate
-          </button>
-        </div>
-      </div>
-
-      <div className="skeu-card">
-        <h2 className="text-xl font-semibold mb-4">Send Progress</h2>
-        {progress ? (
+    <div className="skeu-page">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-2">
           <div>
-            <div className="flex justify-between text-sm mb-2 text-surface-900 font-medium">
-              <span>
-                {progress.sent} Sent / {progress.total} Total
-              </span>
-              <span>
-                {Math.round(
-                  ((progress.sent + progress.failed) / progress.total) * 100,
-                ) || 0}
-                %
-              </span>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl font-semibold text-text-primary">
+                {data.name}
+              </h1>
+              <Link
+                href={`/campaigns/${data.id}/edit`}
+                className="p-1.5 text-text-muted hover:text-primary-base hover:bg-bg-subtle rounded transition inline-flex items-center justify-center"
+                title="Edit Campaign"
+              >
+                <Edit size={16} />
+              </Link>
             </div>
-            <div className="skeu-progress-bar mb-4">
-              <div
-                style={{
-                  width: `${Math.round(((progress.sent + progress.failed) / progress.total) * 100) || 0}%`,
-                }}
-              ></div>
-            </div>
-            <div className="flex gap-4 text-sm font-medium">
-              <span className="text-green-600">{progress.sent} Sent</span>
-              <span className="text-red-600">{progress.failed} Failed</span>
-              <span className="text-surface-600">
-                {progress.pending} Pending
-              </span>
+            <span
+              className={`skeu-badge skeu-badge-${data.status.toLowerCase()}`}
+            >
+              {data.status}
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            {data.status === "SENDING" && (
+              <Button
+                variant="ghost"
+                onClick={() => handleAction("pause")}
+                leftIcon={<Pause size={16} />}
+              >
+                Pause
+              </Button>
+            )}
+            {(data.status === "DRAFT" || data.status === "PAUSED" || data.status === "SCHEDULED") && (
+              <Button
+                variant="primary"
+                onClick={() =>
+                  handleAction(data.status === "PAUSED" ? "resume" : "send")
+                }
+                leftIcon={<Play size={16} />}
+              >
+                {data.status === "PAUSED" ? "Resume" : data?.scheduledAt && new Date(data.scheduledAt) > new Date() ? "Schedule" : "Launch"}
+              </Button>
+            )}
+            {data.status === "DONE" && (
+              <>
+                <Button
+                  variant="primary"
+                  onClick={() => handleAction("resendAll")}
+                  leftIcon={<RotateCcw size={16} />}
+                >
+                  Resend All
+                </Button>
+                {(progress?.failed || 0) > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleAction("resendFailed")}
+                    leftIcon={<RotateCcw size={16} />}
+                    className="text-danger-text border-danger-text/20 hover:bg-danger-bg"
+                  >
+                    Resend Failed ({progress?.failed})
+                  </Button>
+                )}
+              </>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => handleAction("duplicate")}
+              leftIcon={<Copy size={16} />}
+            >
+              Duplicate
+            </Button>
+          </div>
+        </div>
+
+        {/* STATS ROW */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">TOTAL RECIPIENTS</div>
+            <div className="value">{progress?.total ?? 0}</div>
+            <div className="sub text-text-muted">Target audience size</div>
+          </div>
+          <div className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">SENT SUCCESS</div>
+            <div className="value">{progress?.sent ?? 0}</div>
+            <div className="sub text-emerald-500 font-semibold">
+              {progress && progress.total > 0
+                ? `${Math.round((progress.sent / progress.total) * 100)}% delivery`
+                : "0% delivery"}
             </div>
           </div>
-        ) : (
-          <p className="text-surface-500">No active sending progress.</p>
-        )}
-      </div>
+          <div className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">FAILED / BOUNCED</div>
+            <div className="value">{progress?.failed ?? 0}</div>
+            <div
+              className={`sub font-semibold ${
+                progress && progress.failed > 0
+                  ? "text-danger-text"
+                  : "text-text-muted"
+              }`}
+            >
+              {progress && progress.total > 0
+                ? `${Math.round((progress.failed / progress.total) * 100)}% error rate`
+                : "0% error rate"}
+            </div>
+          </div>
+          <div className="skeu-stat-card flex flex-col justify-center">
+            <div className="label">PENDING QUEUE</div>
+            <div className="value">{progress?.pending ?? 0}</div>
+            <div className="sub text-text-muted">Remaining to process</div>
+          </div>
+        </div>
 
-      {data.abEnabled && data.abVariants && data.abVariants.length > 0 && (
-        <div className="skeu-card">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Beaker size={20} className="text-ice-500" />
-            A/B Test Results
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.abVariants.map((variant: { id: string; name: string; subject: string; body: string; isWinner: boolean; openCount: number; replyCount: number; }, index: number) => (
-              <div key={variant.id} className={`p-4 border rounded-lg ${variant.isWinner ? 'border-amber-400 bg-amber-50' : 'border-surface-200 bg-white dark:bg-surface-800'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-surface-900 dark:text-surface-50">
-                    {variant.name} {variant.isWinner && <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full uppercase tracking-wider">Winner</span>}
-                  </h3>
-                  <div className="text-xs text-surface-500 font-medium">
-                    {variant.openCount} Opens | {variant.replyCount} Replies
+        {/* TWO COLUMN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          {/* LEFT COLUMN: Progress, A/B Testing, Recipients List */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* SEND PROGRESS CARD */}
+            <div className="skeu-card">
+              <h3 className="text-xs font-bold tracking-widest text-text-muted uppercase mb-4">
+                SEND PROGRESS
+              </h3>
+              {progress ? (
+                <div>
+                  <div className="flex justify-between text-sm mb-2 text-text-primary font-semibold">
+                    <span>
+                      {progress.sent} Sent / {progress.total} Total
+                    </span>
+                    <span>
+                      {Math.round(
+                        ((progress.sent + progress.failed) / progress.total) *
+                          100,
+                      ) || 0}
+                      %
+                    </span>
+                  </div>
+                  <div className="skeu-progress-bar mb-4">
+                    <div
+                      style={{
+                        width: `${
+                          Math.round(
+                            ((progress.sent + progress.failed) /
+                              progress.total) *
+                              100,
+                          ) || 0
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                  <div className="flex gap-4 text-sm font-semibold">
+                    <span className="text-emerald-500">
+                      {progress.sent} Sent
+                    </span>
+                    <span className="text-danger-text">
+                      {progress.failed} Failed
+                    </span>
+                    <span className="text-text-muted">
+                      {progress.pending} Pending
+                    </span>
                   </div>
                 </div>
-                <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{variant.subject}</p>
-                <p className="text-xs text-surface-500 mt-1 line-clamp-2">{variant.body}</p>
+              ) : (
+                <p className="text-text-muted text-sm italic">
+                  No active sending progress.
+                </p>
+              )}
+            </div>
+
+            {/* A/B TEST RESULTS */}
+            {data.abEnabled &&
+              data.abTemplateVariants &&
+              data.abTemplateVariants.length > 0 && (
+                <div className="skeu-card space-y-4">
+                  <h2 className="text-xs font-bold tracking-widest text-text-muted uppercase flex items-center gap-2">
+                    <Beaker size={16} className="text-text-muted" />
+                    A/B Test Results
+                  </h2>
+                  <div className="space-y-4">
+                    {data.abTemplateVariants.map((templateVariant) => (
+                      <div
+                        key={templateVariant.id}
+                        className={`p-4 border rounded-xl shadow-sm ${
+                          templateVariant.isWinner
+                            ? "border-amber-400 bg-amber-500/5 dark:bg-amber-500/10"
+                            : "border-border-subtle bg-bg-subtle/40"
+                        }`}
+                      >
+                        <div className="flex justify-between items-center mb-3 border-b border-border-subtle pb-3">
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2 truncate">
+                              {templateVariant.name}
+                              {templateVariant.isWinner && (
+                                <span className="skeu-badge bg-amber-100 text-amber-700 border-transparent dark:bg-amber-900/30">
+                                  Winner
+                                </span>
+                              )}
+                            </h3>
+                            <p className="text-xs text-text-muted truncate mt-1">
+                              {templateVariant.body}
+                            </p>
+                          </div>
+                          <div className="text-xs font-semibold bg-bg-base border border-border-subtle px-3 py-1 rounded-md text-text-primary shrink-0 ml-2">
+                            {templateVariant.openCount} Opens |{" "}
+                            {templateVariant.replyCount} Replies
+                          </div>
+                        </div>
+
+                        <div className="pl-4 border-l-2 border-border-subtle space-y-3">
+                          <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">
+                            Subject Line Variants
+                          </h4>
+                          {templateVariant.subjectVariants.map((subjectVariant) => (
+                            <div
+                              key={subjectVariant.id}
+                              className={`p-3 border rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] ${
+                                subjectVariant.isWinner
+                                  ? "border-amber-400 bg-amber-500/5"
+                                  : "border-border-subtle bg-bg-base"
+                              }`}
+                            >
+                              <div className="flex justify-between items-center flex-wrap gap-2">
+                                <div className="flex items-center gap-2 text-sm min-w-0">
+                                  <span className="font-semibold text-text-primary shrink-0">
+                                    {subjectVariant.name}:
+                                  </span>
+                                  <span className="text-text-muted truncate">
+                                    {subjectVariant.subject}
+                                  </span>
+                                  {subjectVariant.isWinner && (
+                                    <span className="skeu-badge bg-amber-100 text-amber-700 border-transparent dark:bg-amber-900/30">
+                                      Winner
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs font-medium text-text-muted shrink-0">
+                                  {subjectVariant.openCount} Opens |{" "}
+                                  {subjectVariant.replyCount} Replies
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* RECIPIENTS SECTION */}
+            <div className="skeu-card p-0 overflow-hidden">
+              <button
+                onClick={handleToggleRecipients}
+                className="w-full flex justify-between items-center px-5 py-4 font-semibold text-sm text-text-primary hover:bg-bg-subtle/50 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center gap-2">
+                  <Inbox size={16} className="text-text-muted" />
+                  Recipients & Sending List
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-normal text-text-muted bg-bg-subtle border border-border-subtle px-2 py-0.5 rounded-full">
+                    {progress?.total ?? 0}
+                  </span>
+                  {showRecipients ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </div>
+              </button>
+
+              {showRecipients && (
+                <div className="p-5 border-t border-border-subtle bg-bg-base space-y-4">
+                  {/* Search & Filters */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search
+                        size={16}
+                        className="absolute left-3 top-2.5 text-text-muted"
+                      />
+                      <input
+                        type="text"
+                        className="skeu-input pl-9 py-1.5 text-sm bg-bg-base"
+                        placeholder="Search by email address..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-full sm:w-48">
+                      <select
+                        className="skeu-select h-[38px] py-1.5 px-3 text-sm bg-bg-base"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                      >
+                        <option value="ALL">All Statuses</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="SENT">Sent Successfully</option>
+                        <option value="FAILED">Failed / Bounced</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Recipients Table */}
+                  {recipientsLoading ? (
+                    <div className="p-8 text-center text-text-muted flex justify-center items-center gap-2">
+                      <div className="animate-spin w-4 h-4 border-2 border-primary-base border-t-transparent rounded-full"></div>
+                      <span>Loading recipient data...</span>
+                    </div>
+                  ) : filteredRecipients.length === 0 ? (
+                    <div className="p-8 text-center border border-dashed border-border-subtle rounded-xl text-text-muted bg-bg-subtle/30 text-sm">
+                      No recipients matched the search criteria.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto max-h-96 border border-border-subtle rounded-xl">
+                      <table className="skeu-table min-w-full">
+                        <thead>
+                          <tr className="bg-bg-subtle/50">
+                            <th className="px-4 py-3 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border-subtle">
+                              Email
+                            </th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border-subtle">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border-subtle">
+                              Details
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border-subtle">
+                          {filteredRecipients.map((recipient) => (
+                            <tr
+                              key={recipient.id}
+                              className="hover:bg-bg-subtle/30 transition-colors"
+                            >
+                              <td className="px-4 py-3 text-sm font-medium text-text-primary border-b border-border-subtle">
+                                {recipient.email}
+                              </td>
+                              <td className="px-4 py-3 text-sm border-b border-border-subtle">
+                                <span
+                                  className={`skeu-badge ${
+                                    recipient.status === "SENT"
+                                      ? "skeu-badge-sent"
+                                      : recipient.status === "PENDING"
+                                        ? "skeu-badge-pending"
+                                        : "skeu-badge-failed"
+                                  }`}
+                                >
+                                  {recipient.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-xs text-text-muted border-b border-border-subtle">
+                                {recipient.status === "SENT" && recipient.sentAt ? (
+                                  <span className="flex items-center gap-1">
+                                    <CheckCircle
+                                      size={12}
+                                      className="text-success-text"
+                                    />
+                                    Sent {new Date(recipient.sentAt).toLocaleString()}
+                                  </span>
+                                ) : recipient.status === "FAILED" ||
+                                  recipient.status === "BOUNCED" ? (
+                                  <span
+                                    className="flex items-center gap-1 text-danger-text font-medium"
+                                    title={recipient.failReason ?? undefined}
+                                  >
+                                    <AlertCircle size={12} />
+                                    {recipient.failReason || "Delivery failed"}
+                                  </span>
+                                ) : (
+                                  <span className="text-text-muted italic">
+                                    Waiting in queue
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Configuration Details, Template Info */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* CONFIGURATION CARD */}
+            <div className="skeu-card space-y-4">
+              <h3 className="text-xs font-bold tracking-widest text-text-muted uppercase">
+                CAMPAIGN CONFIGURATION
+              </h3>
+
+              <div className="space-y-3 pt-1">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-muted flex items-center gap-1.5">
+                    <Calendar size={14} /> Created
+                  </span>
+                  <span className="font-semibold text-text-primary">
+                    {new Date(data.createdAt).toLocaleDateString(undefined, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+
+                <div className="border-t border-border-subtle my-2"></div>
+
+                <div>
+                  <span className="text-text-muted text-sm flex items-center gap-1.5 mb-2">
+                    <Mail size={14} /> Sender Accounts ({data.emailAccounts?.length || 0})
+                  </span>
+                  {data.emailAccounts && data.emailAccounts.length > 0 ? (
+                    <div className="space-y-2">
+                      {data.emailAccounts.map((account) => (
+                        <div
+                          key={account.id}
+                          className="flex items-center gap-2.5 p-2.5 border border-border-subtle rounded-xl bg-bg-subtle/30 text-xs"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-bg-base border border-border-subtle flex items-center justify-center shrink-0">
+                            <Mail size={14} className="text-text-muted" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-text-primary truncate">
+                              {account.label}
+                            </p>
+                            <p className="text-text-muted truncate">
+                              {account.fromEmail}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-muted italic">
+                      No sending accounts associated.
+                    </p>
+                  )}
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* TEMPLATE DETAILS CARD */}
+            {data.template && (
+              <div className="skeu-card space-y-4">
+                <h3 className="text-xs font-bold tracking-widest text-text-muted uppercase">
+                  EMAIL TEMPLATE
+                </h3>
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-start gap-2.5 p-3 border border-border-subtle rounded-xl bg-bg-subtle/30">
+                    <div className="w-8 h-8 rounded-lg bg-bg-base border border-border-subtle flex items-center justify-center shrink-0 mt-0.5">
+                      <FileText size={16} className="text-text-muted" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                        Subject Line
+                      </span>
+                      <h4
+                        className="font-semibold text-sm text-text-primary truncate"
+                        title={data.template.subject}
+                      >
+                        {data.template.subject}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border-subtle my-2"></div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                      Body Copy Preview
+                    </span>
+                    <div className="p-3 bg-bg-subtle/30 border border-border-subtle rounded-xl text-xs text-text-muted whitespace-pre-line max-h-48 overflow-y-auto font-mono">
+                      {data.template.body}
+                    </div>
+                  </div>
+
+                  {data.template.attachments &&
+                    Array.isArray(data.template.attachments) &&
+                    data.template.attachments.length > 0 && (
+                      <>
+                        <div className="border-t border-border-subtle my-2"></div>
+                        <div>
+                          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                            Attachments
+                          </span>
+                          <div className="flex flex-wrap gap-2 p-2.5 bg-bg-subtle/30 border border-border-subtle rounded-xl">
+                            {data.template.attachments.map((att: CampaignAttachment, attIdx: number) => (
+                              <span
+                                key={attIdx}
+                                className="inline-flex items-center px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-xs font-mono text-text-muted"
+                              >
+                                {att.filename}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

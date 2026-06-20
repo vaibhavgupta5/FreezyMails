@@ -3,9 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientBrowser } from '@/lib/supabase-client'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 import { EmailAccount, User } from '@prisma/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function SettingsForm({ user, accounts }: { user: User, accounts: EmailAccount[] }) {
   const router = useRouter()
@@ -72,11 +75,11 @@ export default function SettingsForm({ user, accounts }: { user: User, accounts:
         <div className="space-y-4 max-w-md">
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
-            <input className="skeu-input" value={name} onChange={e => setName(e.target.value)} />
+            <Input className="skeu-input" value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
-            <input className="skeu-input bg-surface-100 text-surface-500 cursor-not-allowed" value={user.email} disabled />
+            <Input className="skeu-input bg-surface-100 text-surface-500 cursor-not-allowed" value={user.email} disabled />
           </div>
         </div>
       </div>
@@ -86,13 +89,18 @@ export default function SettingsForm({ user, accounts }: { user: User, accounts:
         <div className="space-y-4 max-w-md">
           <div>
             <label className="block text-sm font-medium mb-1">Select Email Account</label>
-            <select className="skeu-select" value={defaultAccountId} onChange={e => setDefaultAccountId(e.target.value)}>
-              <option value="">None</option>
-              {accounts.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
-            </select>
+            <Select value={defaultAccountId || "none"} onValueChange={val => setDefaultAccountId(val === "none" ? "" : val)}>
+              <SelectTrigger className="skeu-select">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <p className="text-xs text-surface-600 mt-1">This account will be pre-selected when creating new campaigns.</p>
           </div>
-          <button className="skeu-btn-primary mt-2" onClick={handleSaveProfile} disabled={loading}>Save Settings</button>
+          <Button variant="primary" className="mt-2" onClick={handleSaveProfile} isLoading={loading}>Save Settings</Button>
         </div>
       </div>
 
@@ -104,8 +112,8 @@ export default function SettingsForm({ user, accounts }: { user: User, accounts:
             <h3 className="font-semibold text-red-900 mb-1">Delete all campaigns</h3>
             <p className="text-sm text-red-700 mb-3">This will permanently delete all your campaigns, templates, and analytics.</p>
             <div className="flex gap-2 max-w-md">
-              <input className="skeu-input border-red-300" placeholder="Type CONFIRM" value={campaignConfirm} onChange={e => setCampaignConfirm(e.target.value)} />
-              <button className="skeu-btn-danger whitespace-nowrap" onClick={handleDeleteCampaigns} disabled={loading || campaignConfirm !== 'CONFIRM'}>Delete Campaigns</button>
+              <Input className="skeu-input border-red-300" placeholder="Type CONFIRM" value={campaignConfirm} onChange={e => setCampaignConfirm(e.target.value)} />
+              <Button variant="danger" className="whitespace-nowrap" onClick={handleDeleteCampaigns} isLoading={loading} disabled={campaignConfirm !== 'CONFIRM'}>Delete Campaigns</Button>
             </div>
           </div>
 
@@ -113,8 +121,8 @@ export default function SettingsForm({ user, accounts }: { user: User, accounts:
             <h3 className="font-semibold text-red-900 mb-1">Delete account</h3>
             <p className="text-sm text-red-700 mb-3">This will permanently delete your account and all associated data.</p>
             <div className="flex gap-2 max-w-md">
-              <input className="skeu-input border-red-300" placeholder={`Type ${user.email}`} value={accountConfirm} onChange={e => setAccountConfirm(e.target.value)} />
-              <button className="skeu-btn-danger whitespace-nowrap" onClick={handleDeleteAccount} disabled={loading || accountConfirm !== user.email}>Delete Account</button>
+              <Input className="skeu-input border-red-300" placeholder={`Type ${user.email}`} value={accountConfirm} onChange={e => setAccountConfirm(e.target.value)} />
+              <Button variant="danger" className="whitespace-nowrap" onClick={handleDeleteAccount} isLoading={loading} disabled={accountConfirm !== user.email}>Delete Account</Button>
             </div>
           </div>
         </div>

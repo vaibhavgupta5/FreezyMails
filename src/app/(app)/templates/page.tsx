@@ -13,15 +13,17 @@ export default async function TemplatesPage() {
   });
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Templates</h1>
-        <Link href="/templates/new" className="skeu-btn-primary">
-          New Template
-        </Link>
-      </div>
+    <div className="skeu-page">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-semibold text-text-primary">Templates</h1>
+          <Link href="/templates/new" className="skeu-btn-primary">
+            New Template
+          </Link>
+        </div>
 
-      <TemplateList initialTemplates={templates} />
+        <TemplateList initialTemplates={templates} />
+      </div>
     </div>
   );
 }

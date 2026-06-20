@@ -7,6 +7,13 @@ const templateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   subject: z.string().min(1, 'Subject is required'),
   body: z.string().min(1, 'Body is required'),
+  attachments: z.array(
+    z.object({
+      filename: z.string(),
+      content: z.string(),
+      encoding: z.string().optional(),
+    })
+  ).optional(),
 })
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -48,6 +55,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         subject: data.subject,
         body: data.body,
         variables: variables,
+        attachments: data.attachments || [],
       }
     })
 

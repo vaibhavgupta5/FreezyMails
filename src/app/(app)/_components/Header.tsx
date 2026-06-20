@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, ChevronRight, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const pathname = usePathname();
@@ -17,15 +18,16 @@ export default function Header() {
   const segments = pathname.split('/').filter(Boolean);
 
   return (
-    <header className="h-16 border-b border-surface-400 bg-surface-200 flex items-center justify-between px-6 sticky top-0 z-10 shrink-0">
+    <header className="h-16 border-b border-surface-400 bg-surface-200 flex items-center justify-between px-6 sticky top-0 z-50 shrink-0">
       <div className="flex items-center text-sm text-surface-600">
-        <button 
+        <Button 
+          variant="none"
           onClick={() => router.back()} 
           className="p-1 mr-3 rounded hover:bg-surface-300 text-surface-600 transition-colors flex items-center justify-center cursor-pointer"
           title="Go back"
         >
           <ArrowLeft size={16} />
-        </button>
+        </Button>
         <Link href="/dashboard" className="hover:text-surface-900 transition-colors">
           Home
         </Link>
@@ -48,7 +50,8 @@ export default function Header() {
       </div>
 
       {mounted && (
-        <button
+        <Button
+          variant="none"
           onClick={() => {
             console.log('Current theme before click:', theme);
             const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -59,7 +62,7 @@ export default function Header() {
           title="Toggle Theme"
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        </Button>
       )}
     </header>
   );

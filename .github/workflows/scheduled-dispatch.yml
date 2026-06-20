@@ -1,0 +1,13 @@
+name: Scheduled Campaign Dispatch
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Run every 5 minutes
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  dispatch-campaigns:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Scheduled Dispatch
+        run: curl -s -f -X POST https://freezymails.onrender.com/api/workers/scheduled || echo "Failed to trigger scheduled dispatch"

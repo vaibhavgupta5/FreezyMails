@@ -7,6 +7,13 @@ const templateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   subject: z.string().min(1, 'Subject is required'),
   body: z.string().min(1, 'Body is required'),
+  attachments: z.array(
+    z.object({
+      filename: z.string(),
+      content: z.string(),
+      encoding: z.string().optional(),
+    })
+  ).optional(),
 })
 
 export async function GET() {
@@ -44,6 +51,7 @@ export async function POST(request: Request) {
         subject: data.subject,
         body: data.body,
         variables: variables,
+        ...({ attachments: data.attachments || [] } as unknown as Record<string, unknown>),
       }
     })
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 import {
   Snowflake,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClientBrowser } from "@/lib/supabase-client";
 import { useInboxStore } from "@/stores/useInboxStore";
+import { Logo } from "@/components/ui/Logo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -51,25 +53,26 @@ export default function Sidebar({ user }: { user: User }) {
 
   return (
     <div
-      className={`${isCollapsed ? "w-20" : "w-64"} skeu-sidebar h-screen transition-all duration-300 relative shrink-0`}
+      className={`${isCollapsed ? "w-20" : "w-64"} skeu-sidebar h-[100dvh] transition-all duration-300 relative shrink-0`}
     >
-      <button
+      <Button
+        variant="none"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-5 bg-surface-100 border border-surface-400 rounded-full p-1 shadow-skeu-raised hover:bg-surface-50 text-surface-600 transition-colors z-[100] cursor-pointer"
+        className="absolute -right-3 top-5 bg-surface-100 border border-surface-400 rounded-full p-1  -skeu-raised hover:bg-surface-50 text-surface-600 transition-colors z-[100] cursor-pointer"
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
+      </Button>
 
       <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden">
         <div
-          className={`h-16 flex items-center border-b border-surface-400 gap-2 ${isCollapsed ? "justify-center px-0" : "px-6"}`}
+          className={`h-16 flex items-center border-b border-surface-400 ${isCollapsed ? "justify-center px-0" : "px-6"}`}
         >
-          <Snowflake className="text-ice-500 shrink-0" size={24} />
-          {!isCollapsed && (
-            <h1 className="text-xl font-medium text-surface-900 truncate">
-              freezy<span className="text-ice-900 font-bold ">Mails</span>
-            </h1>
-          )}
+          <Logo
+            showText={!isCollapsed}
+            iconSize={24}
+            textSize="text-xl"
+            textColor="text-surface-900"
+          />
         </div>
 
         <nav className={`flex-1 p-4 space-y-1 ${isCollapsed ? "px-2" : ""}`}>
@@ -92,7 +95,7 @@ export default function Sidebar({ user }: { user: User }) {
                   )}
                 </div>
                 {!isCollapsed && item.href === "/inbox" && unreadCount > 0 && (
-                  <span className="bg-ice-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                  <span className="bg-ice-500 text-white text-xs font-bold px-2 py-0.5 rounded-full  -sm">
                     {unreadCount}
                   </span>
                 )}
@@ -113,7 +116,7 @@ export default function Sidebar({ user }: { user: User }) {
               router.push("/settings");
             }}
           >
-            <div className="w-8 h-8 rounded-full bg-ice-100 flex items-center justify-center text-ice-700 font-bold shadow-skeu-inset shrink-0">
+            <div className="w-8 h-8 rounded-full bg-ice-100 flex items-center justify-center text-ice-700 font-bold  -skeu-inset shrink-0">
               {(user.email || "U").charAt(0).toUpperCase()}
             </div>
             {!isCollapsed && (
@@ -124,14 +127,15 @@ export default function Sidebar({ user }: { user: User }) {
           </div>
 
           <div className={`flex ${isCollapsed ? "flex-col" : ""} gap-2 w-full`}>
-            <button
+            <Button
+              variant="none"
               onClick={handleSignOut}
-              className={`flex items-center justify-center gap-2 p-1.5 text-sm text-surface-200 hover:text-red-600 transition-colors cursor-pointer rounded-lg hover:bg-surface-100 ${!isCollapsed && "flex-1 border border-surface-300"}`}
+              className={`flex items-center justify-center gap-2 p-1.5 text-sm text-text-muted hover:text-danger-text hover:bg-danger-bg/20 transition-colors cursor-pointer rounded-lg ${!isCollapsed && "flex-1 border border-border-subtle"}`}
               title="Sign Out"
             >
               <LogOut size={16} />
               {!isCollapsed && <span>Sign Out</span>}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

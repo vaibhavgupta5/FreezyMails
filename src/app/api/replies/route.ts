@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getUser } from '@/lib/supabase'
+import { renderTemplate } from '@/lib/template-parser'
 
 export async function GET(request: Request) {
   const user = await getUser()
@@ -17,21 +18,85 @@ export async function GET(request: Request) {
   })
   const campaignIds = campaigns.map(c => c.id)
 
-  const [replies, total] = await Promise.all([
+  const [rawReplies, sentEvents] = await Promise.all([
     prisma.reply.findMany({
       where: { campaignId: { in: campaignIds } },
       orderBy: { receivedAt: 'desc' },
-      skip,
-      take: limit,
+      take: 200, // Fetch top 200 for merging
       include: {
         campaign: { select: { name: true } },
-        recipient: { select: { email: true, dynamicData: true } }
+        recipient: { select: { email: true, dynamicData: true, mailEvents: true } }
       }
     }),
-    prisma.reply.count({
-      where: { campaignId: { in: campaignIds } }
+    prisma.mailEvent.findMany({
+      where: { campaignId: { in: campaignIds }, type: 'SENT' },
+      orderBy: { occurredAt: 'desc' },
+      take: 200, // Fetch top 200 for merging
+      include: {
+        campaign: { include: { template: true, abTemplateVariants: { include: { subjectVariants: true } } } },
+        recipient: { select: { email: true, dynamicData: true, mailEvents: true } }
+      }
     })
   ])
 
-  return NextResponse.json({ replies, total, page, limit })
+  const formattedReplies = rawReplies.map(r => ({
+    ...r,
+    type: 'REPLY',
+    receivedAt: r.receivedAt.toISOString(),
+    repliedAt: r.repliedAt?.toISOString() || null
+  }))
+
+  const formattedSentEvents = sentEvents.map(e => {
+    let subj = e.campaign.template.subject;
+    const rawDynamicData = (e.recipient.dynamicData as Record<string, unknown>) || {};
+    const dynamicData: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawDynamicData)) {
+      dynamicData[k] = String(v);
+    }
+    
+    const tVariantId = dynamicData._templateVariantId;
+    const sVariantId = dynamicData._subjectVariantId;
+    
+    if (sVariantId && e.campaign.abTemplateVariants) {
+      const tVariant = e.campaign.abTemplateVariants.find(tv => tv.id === tVariantId);
+      if (tVariant && tVariant.subjectVariants) {
+        const sVariant = tVariant.subjectVariants.find(sv => sv.id === sVariantId);
+        if (sVariant) subj = sVariant.subject;
+      }
+    }
+
+    const renderedSubj = renderTemplate(subj, dynamicData);
+
+    let bodyTemplate = e.campaign.template.body;
+    if (tVariantId && e.campaign.abTemplateVariants) {
+      const tVariant = e.campaign.abTemplateVariants.find(tv => tv.id === tVariantId);
+      if (tVariant) bodyTemplate = tVariant.body;
+    }
+    const renderedBody = renderTemplate(bodyTemplate, dynamicData);
+
+    return {
+      id: e.id,
+      type: 'SENT',
+      campaignId: e.campaignId,
+      recipientId: e.recipientId,
+      messageId: (e.metadata as Record<string, string>)?.messageId || '',
+      subject: renderedSubj,
+      fromEmail: 'You',
+      body: renderedBody,
+      receivedAt: e.occurredAt.toISOString(),
+      isRead: true, // Sent emails are naturally read
+      repliedAt: null,
+      campaign: { name: e.campaign.name },
+      recipient: { email: e.recipient.email, dynamicData }
+    }
+  })
+
+  const allEvents = [...formattedReplies, ...formattedSentEvents]
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+
+  const total = allEvents.length;
+  const paginatedEvents = allEvents.slice(skip, skip + limit);
+
+  return NextResponse.json({ replies: paginatedEvents, total, page, limit })
 }
+

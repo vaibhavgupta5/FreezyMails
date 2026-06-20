@@ -1,114 +1,115 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface-50: var(--surface-50);
-  --color-surface-100: var(--surface-100);
-  --color-surface-200: var(--surface-200);
-  --color-surface-300: var(--surface-300);
-  --color-surface-400: var(--surface-400);
-  --color-surface-500: var(--surface-500);
-  --color-surface-600: var(--surface-600);
-  --color-surface-700: var(--surface-700);
-  --color-surface-800: var(--surface-800);
-  --color-surface-900: var(--surface-900);
+  --color-bg-base: var(--bg-base);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-primary-base: var(--primary-base);
+  --color-primary-text: var(--primary-text);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-text: var(--danger-text);
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
 
-  --color-ice-50: var(--ice-50);
-  --color-ice-100: var(--ice-100);
-  --color-ice-200: var(--ice-200);
-  --color-ice-300: var(--ice-300);
-  --color-ice-500: var(--ice-500);
-  --color-ice-600: var(--ice-600);
-  --color-ice-700: var(--ice-700);
-  --color-ice-900: var(--ice-900);
+  /* Map old names so the codebase doesn't break instantly, but points to new tokens */
+  --color-surface-50: var(--bg-base);
+  --color-surface-100: var(--bg-base);
+  --color-surface-200: var(--bg-subtle);
+  --color-surface-300: var(--border-subtle);
+  --color-surface-400: var(--border-subtle);
+  --color-surface-500: var(--text-muted);
+  --color-surface-600: var(--text-muted);
+  --color-surface-700: var(--text-muted);
+  --color-surface-800: var(--text-primary);
+  --color-surface-900: var(--text-primary);
+
+  --color-ice-50: var(--bg-subtle);
+  --color-ice-100: var(--border-subtle);
+  --color-ice-200: var(--border-subtle);
+  --color-ice-300: var(--primary-base);
+  --color-ice-500: var(--primary-base);
+  --color-ice-600: var(--primary-base);
+  --color-ice-700: var(--primary-base);
+  --color-ice-900: var(--primary-text);
 
   --font-sans: var(--font-inter), sans-serif;
+  --font-display: var(--font-outfit), var(--font-inter), sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
-
-  --shadow-skeu-raised: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
-  --shadow-skeu-inset: inset 0 2px 4px rgba(0,0,0,0.15), inset 0 1px 2px rgba(0,0,0,0.1);
-  --shadow-skeu-btn: 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25);
-  --shadow-skeu-btn-press: inset 0 2px 4px rgba(0,0,0,0.2);
 }
 
 @layer base {
   :root {
-    --surface-50: #ffffff;
-    --surface-100: #f8fcff;
-    --surface-200: #eef7fc;
-    --surface-300: #dcecf7;
-    --surface-400: #c3d8e8;
-    --surface-500: #90abc0;
-    --surface-600: #648096;
-    --surface-700: #425a6e;
-    --surface-800: #273847;
-    --surface-900: #101b27;
-
-    --ice-50: #e8f4fd;
-    --ice-100: #b8ddf5;
-    --ice-200: #8ecdf0;
-    --ice-300: #6ab8e8;
-    --ice-500: #2288cc;
-    --ice-600: #1a74b0;
-    --ice-700: #155c8a;
-    --ice-900: #0a3050;
+    --bg-base: #ffffff;
+    --bg-subtle: #f4f4f5;
+    --text-primary: #09090b;
+    --text-muted: #71717a;
+    --border-subtle: #e4e4e7;
+    --primary-base: #000000;
+    --primary-text: #ffffff;
+    --danger-bg: #fef2f2;
+    --danger-text: #dc2626;
+    --success-bg: #ecfdf5;
+    --success-text: #059669;
   }
 
   .dark {
-    --surface-50: #0f172a;
-    --surface-100: #1e293b;
-    --surface-200: #334155;
-    --surface-300: #475569;
-    --surface-400: #64748b;
-    --surface-500: #94a3b8;
-    --surface-600: #cbd5e1;
-    --surface-700: #e2e8f0;
-    --surface-800: #f1f5f9;
-    --surface-900: #f8fafc;
+    --bg-base: #0a0a0a;
+    --bg-subtle: #171717;
+    --text-primary: #fafafa;
+    --text-muted: #a1a1aa;
+    --border-subtle: #27272a;
+    --primary-base: #ffffff;
+    --primary-text: #000000;
+    --danger-bg: #450a0a;
+    --danger-text: #f87171;
+    --success-bg: #022c22;
+    --success-text: #34d399;
+  }
+}
 
-    --ice-50: #0a3050;
-    --ice-100: #155c8a;
-    --ice-200: #1a74b0;
-    --ice-300: #2288cc;
-    --ice-500: #6ab8e8;
-    --ice-600: #8ecdf0;
-    --ice-700: #b8ddf5;
-    --ice-900: #e8f4fd;
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
 @layer components {
   .skeu-page {
-    @apply bg-surface-200 min-h-screen text-surface-900;
+    @apply bg-bg-subtle min-h-[100dvh] text-text-primary;
   }
   
   .skeu-sidebar {
-    @apply border-r border-surface-400 bg-ice-200;
-    box-shadow: inset -1px 0 0 rgba(255,255,255,0.5);
+    @apply border-r border-border-subtle bg-bg-base;
   }
   
   .skeu-nav-item {
-    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-surface-900 hover:bg-surface-100 transition-colors;
+    @apply flex items-center gap-2 px-3 py-2 rounded-md text-sm text-text-muted hover:bg-bg-subtle hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-base;
   }
   
   .skeu-nav-item.active {
-    @apply bg-surface-100 shadow-skeu-inset text-surface-900 font-medium;
+    @apply bg-bg-subtle text-text-primary font-medium;
   }
   
   .skeu-card {
-    @apply bg-surface-100 rounded-xl border border-surface-400 shadow-skeu-raised p-4;
+    @apply bg-bg-base rounded-xl border border-border-subtle p-4;
   }
   
   .skeu-card-header {
-    @apply border-b border-surface-400 pb-3 mb-4;
+    @apply border-b border-border-subtle pb-3 mb-4;
   }
   
   .skeu-input {
-    @apply w-full bg-surface-50 border border-surface-400 rounded-lg px-3 py-2 text-sm text-surface-900 shadow-skeu-inset focus:outline-none focus:border-ice-500 focus:ring-1 focus:ring-ice-300 placeholder:text-surface-400;
+    @apply w-full bg-bg-base border border-border-subtle rounded-md px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:border-primary-base focus-visible:ring-1 focus-visible:ring-primary-base placeholder:text-text-muted transition-colors;
   }
   
   .skeu-select {
-    @apply w-full bg-surface-50 border border-surface-400 rounded-lg px-3 py-2 text-sm text-surface-900 shadow-skeu-inset focus:outline-none focus:border-ice-500 focus:ring-1 focus:ring-ice-300 placeholder:text-surface-400 appearance-none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238b7a6a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    @apply w-full bg-bg-base border border-border-subtle rounded-md px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:border-primary-base focus-visible:ring-1 focus-visible:ring-primary-base placeholder:text-text-muted appearance-none transition-colors;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
@@ -116,51 +117,51 @@
   }
   
   .skeu-btn-primary {
-    @apply bg-ice-500 text-white rounded-lg px-4 py-2 text-sm font-medium shadow-skeu-btn border border-ice-700 hover:bg-ice-600 active:shadow-skeu-btn-press active:translate-y-px transition-all disabled:opacity-50 cursor-pointer;
+    @apply bg-primary-base text-primary-text rounded-md px-4 py-2 text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-base focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
   }
   
   .skeu-btn-ghost {
-    @apply bg-surface-100 text-surface-900 rounded-lg px-4 py-2 text-sm border border-surface-400 shadow-skeu-btn hover:bg-surface-50 active:shadow-skeu-btn-press active:translate-y-px disabled:opacity-50 transition-all cursor-pointer;
+    @apply bg-transparent text-text-primary rounded-md px-4 py-2 text-sm border border-border-subtle hover:bg-bg-subtle active:scale-[0.98] disabled:opacity-50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-base focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
   }
   
   .skeu-btn-danger {
-    @apply bg-red-600 border-red-800 text-white rounded-lg px-4 py-2 text-sm font-medium shadow-skeu-btn hover:bg-red-700 active:shadow-skeu-btn-press active:translate-y-px transition-all disabled:opacity-50 cursor-pointer;
+    @apply bg-danger-bg text-danger-text border border-transparent rounded-md px-4 py-2 text-sm font-medium hover:bg-danger-bg/80 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-text focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
   }
   
   .skeu-badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border;
   }
-  .skeu-badge-sent { @apply bg-ice-50 text-ice-900 border-ice-200; }
-  .skeu-badge-opened { @apply bg-green-50 text-green-800 border-green-200; }
-  .skeu-badge-replied { @apply bg-emerald-50 text-emerald-800 border-emerald-200; }
-  .skeu-badge-failed { @apply bg-red-50 text-red-800 border-red-200; }
-  .skeu-badge-pending { @apply bg-surface-100 text-surface-600 border-surface-400; }
-  .skeu-badge-draft { @apply bg-amber-50 text-amber-800 border-amber-200; }
+  .skeu-badge-sent { @apply bg-primary-base text-primary-text border-transparent; }
+  .skeu-badge-opened { @apply bg-success-bg text-success-text border-transparent; }
+  .skeu-badge-replied { @apply bg-success-bg text-success-text border-transparent; }
+  .skeu-badge-failed { @apply bg-danger-bg text-danger-text border-transparent; }
+  .skeu-badge-pending { @apply bg-bg-subtle text-text-muted border-border-subtle; }
+  .skeu-badge-draft { @apply bg-bg-subtle text-text-muted border-border-subtle; }
   
   .skeu-table {
     @apply w-full text-sm;
   }
   .skeu-table th {
-    @apply text-left text-xs font-medium text-surface-600 uppercase tracking-wide pb-2 border-b border-surface-400;
+    @apply text-left text-xs font-medium text-text-muted uppercase tracking-wide pb-2 border-b border-border-subtle;
   }
   .skeu-table td {
-    @apply py-2.5 border-b border-surface-300 text-surface-900;
+    @apply py-2.5 border-b border-border-subtle text-text-primary;
   }
   .skeu-table tr:hover td {
-    @apply bg-surface-50;
+    @apply bg-bg-subtle/50;
   }
   
   .skeu-stat-card {
-    @apply bg-surface-100 rounded-xl border border-surface-400 shadow-skeu-raised p-4 text-center;
+    @apply bg-bg-base rounded-xl border border-border-subtle p-4 text-center;
   }
   .skeu-stat-card .label {
-    @apply text-xs text-surface-600 uppercase tracking-wide mb-1;
+    @apply text-xs text-text-muted uppercase tracking-wide mb-1;
   }
   .skeu-stat-card .value {
-    @apply text-2xl font-semibold text-surface-900;
+    @apply text-2xl font-semibold text-text-primary;
   }
   .skeu-stat-card .sub {
-    @apply text-xs text-surface-600 mt-0.5;
+    @apply text-xs text-text-muted mt-0.5;
   }
 
   .button {
@@ -168,18 +169,17 @@
   }
   
   .skeu-textarea {
-    @apply w-full bg-surface-50 border border-surface-400 rounded-lg px-3 py-2 text-sm text-surface-900 shadow-skeu-inset focus:outline-none focus:border-ice-500 focus:ring-1 focus:ring-ice-300 placeholder:text-surface-400 min-h-[120px] resize-y;
+    @apply w-full bg-bg-base border border-border-subtle rounded-md px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:border-primary-base focus-visible:ring-1 focus-visible:ring-primary-base placeholder:text-text-muted min-h-[120px] resize-y transition-colors;
   }
   
   .skeu-progress-bar {
-    @apply h-2 bg-surface-200 rounded-full overflow-hidden shadow-skeu-inset;
+    @apply h-2 bg-bg-subtle rounded-full overflow-hidden;
   }
   .skeu-progress-bar div {
-    @apply bg-ice-500 h-full transition-all duration-500 rounded-full;
+    @apply bg-primary-base h-full transition-all duration-500 rounded-full;
   }
   
   .skeu-divider {
-    @apply border-t border-surface-400 my-4;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.7);
+    @apply border-t border-border-subtle my-4;
   }
 }
