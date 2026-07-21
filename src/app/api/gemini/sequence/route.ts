@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const numSteps = steps || 3
   const requestedTone = tone || 'professional'
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }) // Use pro for complex multi-step generation
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }) // Use pro for complex multi-step generation
 
   const prompt = `You are an expert cold email copywriter. Write a ${numSteps}-step cold email sequence.
   

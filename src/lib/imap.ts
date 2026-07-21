@@ -10,7 +10,7 @@ async function classifyReply(replyId: string, body: string) {
   try {
     const { GoogleGenerativeAI } = await import('@google/generative-ai')
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const prompt = `Classify this email reply. Reply with ONLY one of: INTERESTED, NOT_INTERESTED, OUT_OF_OFFICE, SPAM, OTHER\n\n${body.substring(0, 800)}`
     const result = await model.generateContent(prompt)
     const text = result.response.text().trim().toUpperCase().replace(/[^A-Z_]/g, '')

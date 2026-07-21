@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 export async function generateTemplateDraft(context: {
   industry?: string, goal?: string, tone?: 'professional'|'casual'|'bold'
 }): Promise<{ subject: string, body: string }> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
   
   const prompt = `Write a cold email template for ${context.goal || 'outreach'} in the ${context.industry || 'general'} industry.
 Tone: ${context.tone || 'professional'}. 
@@ -26,7 +26,7 @@ Return ONLY valid JSON in the exact format: {"subject": "...", "body": "..."}`
 }
 
 export async function generateSubjectVariants(currentSubject: string, count: number = 3): Promise<string[]> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
   
   const prompt = `Generate ${count} alternative subject lines for this cold email subject: '${currentSubject}'. 
 Return ONLY a valid JSON array of strings, for example: ["subject 1", "subject 2"].`
@@ -45,7 +45,7 @@ Return ONLY a valid JSON array of strings, for example: ["subject 1", "subject 2
 }
 
 export async function suggestReply(originalEmail: string, replyReceived: string, instruction?: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
   
   const prompt = `I sent this cold email:
 ${originalEmail}
