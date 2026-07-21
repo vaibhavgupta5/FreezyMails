@@ -22,7 +22,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
     const health = await checkDomainHealth(domain)
     return NextResponse.json(health)
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

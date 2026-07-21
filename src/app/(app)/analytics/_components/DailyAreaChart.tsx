@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AreaChart, Card, Title } from '@tremor/react'
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DailyAreaChart() {
   const [data, setData] = useState([])
@@ -18,7 +19,17 @@ export default function DailyAreaChart() {
   }, [])
 
   if (loading) {
-    return <div className="h-[300px] flex items-center justify-center text-text-muted">Loading chart data...</div>
+    return (
+      <div className="h-[300px] flex items-end space-x-2">
+        <Skeleton className="h-[20%] w-full" />
+        <Skeleton className="h-[40%] w-full" />
+        <Skeleton className="h-[30%] w-full" />
+        <Skeleton className="h-[60%] w-full" />
+        <Skeleton className="h-[50%] w-full" />
+        <Skeleton className="h-[80%] w-full" />
+        <Skeleton className="h-[70%] w-full" />
+      </div>
+    );
   }
 
   return (

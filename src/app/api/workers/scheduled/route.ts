@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import boss, { JOB_SEND_EMAIL } from '@/lib/queue'
+import { distributeJobs } from '@/lib/scheduling'
 
 // This endpoint is meant to be called by a cron job (e.g. Vercel Cron) every 5 minutes
 export async function POST(request: Request) {
@@ -21,9 +22,9 @@ export async function POST(request: Request) {
       },
       include: {
         recipients: {
-          where: { status: 'PENDING' },
-          select: { id: true }
-        }
+          where: { status: 'PENDING' }
+        },
+        emailAccounts: true
       }
     });
 
@@ -37,19 +38,37 @@ export async function POST(request: Request) {
         where: { id: campaign.id },
         data: { status: 'SENDING' }
       });
+      if (campaign.emailAccounts.length === 0) continue;
+      
+      let accountIndex = 0;
+      const jobs: Record<string, unknown>[] = campaign.recipients.map(recipient => {
+        const account = campaign.emailAccounts[accountIndex];
+        accountIndex = (accountIndex + 1) % campaign.emailAccounts.length;
+        
+        return {
+          data: {
+            campaignId: campaign.id,
+            recipientId: recipient.id,
+            accountId: account.id,
+            templateVariantId: (recipient.dynamicData as Record<string, unknown>)?._templateVariantId as string | undefined || null,
+            subjectVariantId: (recipient.dynamicData as Record<string, unknown>)?._subjectVariantId as string | undefined || null,
+            sequenceStepId: null
+          },
+          options: {
+            retryLimit: 3,
+            retryBackoff: true
+          }
+        };
+      });
 
-      // Enqueue the first step for all pending recipients
-      for (const recipient of campaign.recipients) {
-        await boss.send(JOB_SEND_EMAIL, {
-          campaignId: campaign.id,
-          recipientId: recipient.id,
-          sequenceStepId: null // initial email
-        });
+      if (jobs.length > 0) {
+        const finalJobs = distributeJobs(jobs, campaign.pacingType);
+        await boss.insert(JOB_SEND_EMAIL, finalJobs);
       }
     }
 
     return NextResponse.json({ success: true, processed: campaignsToStart.length });
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     console.error('Failed to process scheduled campaigns:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

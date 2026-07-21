@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -18,6 +17,7 @@ model User {
   emailAccounts    EmailAccount[]
   templates        Template[]
   suppressions     Suppression[]
+  mailingLists     MailingList[]
 }
 
 model EmailAccount {
@@ -49,6 +49,8 @@ model EmailAccount {
   user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies           Reply[]
   campaigns         Campaign[] @relation("CampaignToEmailAccount")
+
+  @@index([userId])
 }
 
 model Template {
@@ -64,6 +66,8 @@ model Template {
   abTemplateVariants ABTemplateVariant[]
   campaigns          Campaign[]
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Campaign {
@@ -77,9 +81,7 @@ model Campaign {
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
   dailyLimit              Int?
-  sendWindowStart         Int?
-  sendWindowEnd           Int?
-  timezone                String              @default("UTC")
+  pacingType              String              @default("SLOW")
   bounceThreshold         Int                 @default(5)
   winnerSubjectVariantId  String?
   winnerTemplateVariantId String?
@@ -93,6 +95,9 @@ model Campaign {
   replies                 Reply[]
   emailAccounts           EmailAccount[]      @relation("CampaignToEmailAccount")
   sequenceSteps           SequenceStep[]
+
+  @@index([userId])
+  @@index([status, scheduledAt])
 }
 
 model SequenceStep {
@@ -104,6 +109,8 @@ model SequenceStep {
   body       String
   createdAt  DateTime @default(now())
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, stepIndex])
 }
 
 model Suppression {
@@ -129,6 +136,8 @@ model Recipient {
   mailEvents  MailEvent[]
   campaign    Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   replies     Reply[]
+
+  @@index([campaignId, status])
 }
 
 model MailEvent {
@@ -140,6 +149,9 @@ model MailEvent {
   metadata    Json?
   campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   recipient   Recipient     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, type])
+  @@index([recipientId, type])
 }
 
 model ABTemplateVariant {
@@ -189,6 +201,8 @@ model Reply {
   campaign       Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   emailAccount   EmailAccount   @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
   recipient      Recipient      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, receivedAt])
 }
 
 enum CampaignStatus {
@@ -221,4 +235,29 @@ enum ReplyCategory {
   OUT_OF_OFFICE
   SPAM
   OTHER
+}
+
+model MailingList {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts  Contact[]
+
+  @@index([userId])
+}
+
+model Contact {
+  id            String      @id @default(uuid())
+  mailingListId String
+  email         String
+  customFields  Json        @default("{}")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  mailingList   MailingList @relation(fields: [mailingListId], references: [id], onDelete: Cascade)
+
+  @@unique([mailingListId, email])
+  @@index([mailingListId])
 }

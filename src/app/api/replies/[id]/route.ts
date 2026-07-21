@@ -29,7 +29,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
   try {
     const body = await request.json()
-    const data: any = {}
+    const data: Record<string, unknown> = {}
     if (body.isRead !== undefined) data.isRead = body.isRead
     if (body.isFlagged !== undefined) data.isFlagged = body.isFlagged
     

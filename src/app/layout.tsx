@@ -28,8 +28,6 @@ export const metadata = {
 const faviconUrl =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232288cc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2v20M2 12h20M19 5l-14 14M5 5l14 14M8 12L4 8M16 12l4 4M12 8L8 4M12 16l4 4M12 8l4-4M12 16l-4 4M16 12l4-4M8 12l-4 4'/%3E%3C/svg%3E";
 
-
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -44,7 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TooltipProvider>
             {children}
-            <Toaster position="top-right" />
+            <Toaster position="bottom-right" />
           </TooltipProvider>
         </ThemeProvider>
       </body>

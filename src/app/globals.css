@@ -12,6 +12,8 @@
   --color-danger-text: var(--danger-text);
   --color-success-bg: var(--success-bg);
   --color-success-text: var(--success-text);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-text: var(--warning-text);
 
   /* Map old names so the codebase doesn't break instantly, but points to new tokens */
   --color-surface-50: var(--bg-base);
@@ -52,6 +54,8 @@
     --danger-text: #dc2626;
     --success-bg: #ecfdf5;
     --success-text: #059669;
+    --warning-bg: #fffbeb;
+    --warning-text: #d97706;
   }
 
   .dark {
@@ -66,6 +70,8 @@
     --danger-text: #f87171;
     --success-bg: #022c22;
     --success-text: #34d399;
+    --warning-bg: #451a03;
+    --warning-text: #fbbf24;
   }
 }
 
@@ -135,8 +141,9 @@
   .skeu-badge-opened { @apply bg-success-bg text-success-text border-transparent; }
   .skeu-badge-replied { @apply bg-success-bg text-success-text border-transparent; }
   .skeu-badge-failed { @apply bg-danger-bg text-danger-text border-transparent; }
-  .skeu-badge-pending { @apply bg-bg-subtle text-text-muted border-border-subtle; }
+  .skeu-badge-pending { @apply bg-warning-bg text-warning-text border-transparent; }
   .skeu-badge-draft { @apply bg-bg-subtle text-text-muted border-border-subtle; }
+  .skeu-badge-warning { @apply bg-warning-bg text-warning-text border-transparent; }
   
   .skeu-table {
     @apply w-full text-sm;
@@ -182,4 +189,32 @@
   .skeu-divider {
     @apply border-t border-border-subtle my-4;
   }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
 }

@@ -16,7 +16,7 @@ async function classifyReply(replyId: string, body: string) {
     const text = result.response.text().trim().toUpperCase().replace(/[^A-Z_]/g, '')
     const valid = ['INTERESTED', 'NOT_INTERESTED', 'OUT_OF_OFFICE', 'SPAM', 'OTHER']
     const classification = valid.includes(text) ? text : 'OTHER'
-    await prisma.reply.update({ where: { id: replyId }, data: { classification: classification as any } })
+    await prisma.reply.update({ where: { id: replyId }, data: { classification: classification as import('@prisma/client').ReplyCategory } })
   } catch (err) {
     console.error('Reply classification failed:', err)
   }

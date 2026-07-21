@@ -34,7 +34,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     ])
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

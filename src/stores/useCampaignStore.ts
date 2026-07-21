@@ -15,8 +15,8 @@ interface CampaignDraftState {
   validationErrors: Record<number, string[]>;
   isValid: boolean;
   globalError: string;
-  sendWindowStart: number | null;
-  sendWindowEnd: number | null;
+  pacingType: 'SLOW' | 'FAST';
+  dailyLimit: number | null;
   timezone: string;
   templateVariants: { name: string; body: string; splitPercent: number; subjectVariants: { name: string; subject: string; splitPercent: number }[] }[];
   sequenceSteps: { id?: string; stepIndex: number; delayDays: number; subject: string; body: string }[];
@@ -30,7 +30,8 @@ interface CampaignDraftState {
   setGlobalError: (error: string) => void;
   setTemplateVariants: (templateVariants: { name: string; body: string; splitPercent: number; subjectVariants: { name: string; subject: string; splitPercent: number }[] }[]) => void;
   setSequenceSteps: (sequenceSteps: { id?: string; stepIndex: number; delayDays: number; subject: string; body: string }[]) => void;
-  setSchedule: (start: number | null, end: number | null, tz: string) => void;
+  setDailyLimit: (limit: number | null) => void;
+  setPacingType: (type: 'SLOW' | 'FAST') => void;
   resetDraft: () => void;
   loadCampaign: (campaign: any, recipients: any[], templates: Template[]) => void;
   setScheduledAt: (date: string | null) => void;
@@ -49,12 +50,12 @@ export const useCampaignStore = create<CampaignDraftState>()(
       validationErrors: {},
       isValid: false,
       globalError: '',
-      sendWindowStart: null,
-      sendWindowEnd: null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       templateVariants: [],
       sequenceSteps: [],
       scheduledAt: null,
+      dailyLimit: null,
+      pacingType: 'SLOW',
 
       setStep: (step) => set({ step }),
       
@@ -66,9 +67,11 @@ export const useCampaignStore = create<CampaignDraftState>()(
 
       setSequenceSteps: (sequenceSteps) => set({ sequenceSteps }),
       
-      setScheduledAt: (date) => set({ scheduledAt: date }),
+      setDailyLimit: (dailyLimit) => set({ dailyLimit }),
 
-      setSchedule: (start, end, tz) => set({ sendWindowStart: start, sendWindowEnd: end, timezone: tz }),
+      setPacingType: (pacingType) => set({ pacingType }),
+      
+      setScheduledAt: (date) => set({ scheduledAt: date }),
       
       setRecipientsText: (text, templates) => {
         set({ recipientsText: text });
@@ -135,16 +138,16 @@ export const useCampaignStore = create<CampaignDraftState>()(
         validationErrors: {},
         isValid: false,
         globalError: '',
-        sendWindowStart: null,
-        sendWindowEnd: null,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         templateVariants: [],
         sequenceSteps: [],
-        scheduledAt: null
+        scheduledAt: null,
+        dailyLimit: null,
+        pacingType: 'SLOW'
       }),
 
       loadCampaign: (campaign, recipients, templates) => {
-        const accountIds = campaign.emailAccounts?.map((a: any) => a.id) || [];
+        const accountIds = campaign.emailAccounts?.map((a: { id: string }) => a.id) || [];
         
         let recipientsText = '';
         const selectedTemplate = templates.find((t: Template) => t.id === campaign.templateId);
@@ -153,10 +156,10 @@ export const useCampaignStore = create<CampaignDraftState>()(
           : ['email'];
 
         if (recipients && recipients.length > 0) {
-          const rows = recipients.map((r: any) => {
+          const rows = recipients.map((r: { email: string; dynamicData?: string | Record<string, string> }) => {
             const vals = requiredHeaders.map(h => {
               if (h === 'email') return r.email;
-              const vars = typeof r.dynamicData === 'string' ? JSON.parse(r.dynamicData || '{}') : (r.dynamicData || {});
+              const vars = (typeof r.dynamicData === 'string' ? JSON.parse(r.dynamicData || '{}') : (r.dynamicData || {})) as Record<string, string>;
               return vars[h] || '';
             });
             return vals.join('\t');
@@ -182,13 +185,12 @@ export const useCampaignStore = create<CampaignDraftState>()(
           accountIds,
           templateVariants,
           recipientsText,
-          sendWindowStart: campaign.sendWindowStart,
-          sendWindowEnd: campaign.sendWindowEnd,
           timezone: campaign.timezone || 'UTC',
-          scheduledAt: campaign.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : null
+          scheduledAt: campaign.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : null,
+          dailyLimit: campaign.dailyLimit ?? null,
+          pacingType: campaign.pacingType || 'SLOW'
         });
         
-        // This will trigger the validation logic to re-run and set parsedRecipients
         get().setRecipientsText(recipientsText, templates);
       }
     }),
@@ -201,10 +203,10 @@ export const useCampaignStore = create<CampaignDraftState>()(
         templateId: state.templateId, 
         accountIds: state.accountIds, 
         recipientsText: state.recipientsText,
-        sendWindowStart: state.sendWindowStart,
-        sendWindowEnd: state.sendWindowEnd,
-        timezone: state.timezone
-      }), // only persist form values, validation can be re-run
+        timezone: state.timezone,
+        dailyLimit: state.dailyLimit,
+        pacingType: state.pacingType
+      }),
     }
   )
 )

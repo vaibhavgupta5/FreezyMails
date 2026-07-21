@@ -54,7 +54,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     console.error('Delete campaign error:', error)
     return NextResponse.json({ error: error.message || 'Failed to delete campaign' }, { status: 500 })
   }
@@ -67,7 +67,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
   try {
     const body = await request.json()
-    const { name, dailyLimit, sendWindowStart, sendWindowEnd, timezone, scheduledAt } = body
+    const { name, dailyLimit, pacingType, timezone, scheduledAt } = body
 
     const campaign = await prisma.campaign.findUnique({
       where: { id: params.id, userId: user.id }
@@ -82,15 +82,13 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
       data: {
         ...(name !== undefined && { name }),
         ...(dailyLimit !== undefined && { dailyLimit }),
-        ...(sendWindowStart !== undefined && { sendWindowStart }),
-        ...(sendWindowEnd !== undefined && { sendWindowEnd }),
-        ...(timezone !== undefined && { timezone }),
+        ...(pacingType !== undefined && { pacingType }),
         ...(scheduledAt !== undefined && { scheduledAt: scheduledAt ? new Date(scheduledAt) : null })
       }
     })
 
     return NextResponse.json(updated)
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     console.error('Update campaign error:', error)
     return NextResponse.json({ error: error.message || 'Failed to update campaign' }, { status: 500 })
   }
@@ -109,8 +107,8 @@ const campaignSchema = z.object({
       email: z.string().email('Invalid email address')
     }).passthrough()
   ).min(1, 'At least one recipient is required'),
-  sendWindowStart: z.number().nullable().optional(),
-  sendWindowEnd: z.number().nullable().optional(),
+  pacingType: z.string().optional(),
+  dailyLimit: z.number().nullable().optional(),
   timezone: z.string().optional(),
   scheduledAt: z.string().nullable().optional(),
   templateVariants: z.array(z.object({
@@ -167,9 +165,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
           name: data.name,
           templateId: data.templateId,
           abEnabled: hasVariants,
-          sendWindowStart: data.sendWindowStart,
-          sendWindowEnd: data.sendWindowEnd,
-          timezone: data.timezone || 'UTC',
+          pacingType: data.pacingType || 'SLOW',
           scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
           emailAccounts: {
             set: data.emailAccountIds.map(id => ({ id }))
@@ -243,7 +239,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
           id: recipientId,
           campaignId: campaign.id,
           email: String(email).trim().toLowerCase(),
-          dynamicData: dynamicData as any,
+          dynamicData: dynamicData as import('@prisma/client').Prisma.InputJsonObject,
         }
       })
 

@@ -62,7 +62,7 @@ export default function TemplateList({ initialTemplates }: { initialTemplates: T
       toast.success('Test email sent successfully!');
       setTestTemplateId(null);
       setTestEmail('');
-    } catch (err: any) {
+    } catch (_err: unknown) { const err = _err as Error;
       toast.error(err.message);
     } finally {
       setIsSendingTest(false);

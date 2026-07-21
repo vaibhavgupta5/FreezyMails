@@ -19,6 +19,7 @@ interface CalculatedCampaign {
     sent: number
     opens: number
     replies: number
+    lastSentAt: string | null
   }
 }
 
@@ -40,6 +41,16 @@ export default function CampaignList({ initialCampaigns }: { initialCampaigns: C
       month: 'short',
       day: 'numeric',
       year: 'numeric'
+    }).format(new Date(dateString))
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
     }).format(new Date(dateString))
   }
 
@@ -80,7 +91,7 @@ export default function CampaignList({ initialCampaigns }: { initialCampaigns: C
         </div>
       ) : filteredCampaigns.length === 0 ? (
         <div className="skeu-card p-12 text-center text-text-muted">
-          No campaigns found matching "{search}"
+          {`No campaigns found matching ${search}`}
         </div>
       ) : (
         <div className="skeu-card overflow-hidden">
@@ -90,8 +101,7 @@ export default function CampaignList({ initialCampaigns }: { initialCampaigns: C
                 <TableHead className="font-semibold text-text-primary">Name</TableHead>
                 <TableHead className="font-semibold text-text-primary">Status</TableHead>
                 <TableHead className="font-semibold text-text-primary">Sent</TableHead>
-                <TableHead className="font-semibold text-text-primary">Opens</TableHead>
-                <TableHead className="font-semibold text-text-primary">Replies</TableHead>
+                <TableHead className="font-semibold text-text-primary">Last Sent</TableHead>
                 <TableHead className="font-semibold text-text-primary">Created</TableHead>
                 <TableHead className="text-right font-semibold text-text-primary">Actions</TableHead>
               </TableRow>
@@ -106,11 +116,8 @@ export default function CampaignList({ initialCampaigns }: { initialCampaigns: C
                   <TableCell className="font-medium text-text-primary">{c.name}</TableCell>
                   <TableCell><span className={`skeu-badge skeu-badge-${c.status.toLowerCase()}`}>{c.status}</span></TableCell>
                   <TableCell>{c.stats.sent}</TableCell>
-                  <TableCell>
-                    {c.stats.opens} <span className="text-xs text-text-muted ml-1">({formatPercentage(c.stats.opens, c.stats.sent)})</span>
-                  </TableCell>
-                  <TableCell>
-                    {c.stats.replies} <span className="text-xs text-text-muted ml-1">({formatPercentage(c.stats.replies, c.stats.sent)})</span>
+                  <TableCell className="text-text-muted">
+                    {c.stats.lastSentAt ? formatDateTime(c.stats.lastSentAt) : '-'}
                   </TableCell>
                   <TableCell className="text-text-muted">{formatDate(c.createdAt)}</TableCell>
                   <TableCell className="text-right" onClick={e => e.stopPropagation()}>

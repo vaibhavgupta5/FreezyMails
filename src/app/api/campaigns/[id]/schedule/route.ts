@@ -26,7 +26,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     })
 
     return NextResponse.json({ success: true, status: 'SCHEDULED' })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     console.error('Schedule campaign error:', error)
     return NextResponse.json({ error: error.message || 'Failed to schedule campaign' }, { status: 500 })
   }

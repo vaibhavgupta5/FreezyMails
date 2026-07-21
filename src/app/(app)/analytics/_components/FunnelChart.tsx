@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { BarList, Card, Title, Text } from '@tremor/react'
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FunnelChart() {
   const [data, setData] = useState<any[]>([])
@@ -25,7 +26,14 @@ export default function FunnelChart() {
   }, [])
 
   if (loading) {
-    return <div className="h-[200px] flex items-center justify-center text-text-muted">Loading funnel...</div>
+    return (
+      <div className="h-[200px] flex flex-col justify-center space-y-4">
+        <Skeleton className="h-6 w-full max-w-[90%]" />
+        <Skeleton className="h-6 w-full max-w-[70%]" />
+        <Skeleton className="h-6 w-full max-w-[50%]" />
+        <Skeleton className="h-6 w-full max-w-[30%]" />
+      </div>
+    );
   }
 
   return (

@@ -3,6 +3,7 @@ import { renderTemplate, wrapLinksForTracking } from '../lib/template-parser'
 import { sendEmail } from '../lib/mailer'
 import { MailEventType } from '@prisma/client'
 import type { Job } from 'pg-boss'
+import { distributeJobs } from '../lib/scheduling'
 
 interface SendEmailData {
   recipientId: string;
@@ -108,7 +109,7 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       
       // Send email
       console.log(`Sending email to ${recipient.email} via ${account.provider}...`)
-      const attachments = (campaign.template?.attachments as any[]) || []
+      const attachments = (campaign.template?.attachments as { filename: string; content: string; encoding?: string }[]) || []
       const sendResult = await sendEmail(account, recipient.email, renderedSubject, finalBody, pixelUrl, attachments)
       console.log(`✅ Sent successfully to ${recipient.email}`)
 
@@ -137,21 +138,28 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
           if (currentStepIndex !== -1 && currentStepIndex + 1 < steps.length) {
             nextStep = steps[currentStepIndex + 1]
           } else {
-            nextStep = null as any
+            nextStep = null as unknown as typeof steps[0]
           }
         }
 
         if (nextStep) {
           const delaySeconds = nextStep.delayDays * 24 * 60 * 60
+          const baseDate = new Date(Date.now() + delaySeconds * 1000)
+          
+          const rawJob: { data: SendEmailData; options?: { startAfter?: string | number | Date } } = {
+            data: {
+              recipientId: recipient.id,
+              campaignId,
+              accountId: account.id,
+              templateVariantId: null,
+              subjectVariantId: null,
+              sequenceStepId: nextStep.id,
+            } as SendEmailData
+          }
+          const [finalJob] = distributeJobs([rawJob], campaign.pacingType, baseDate)
+          
           const { default: boss, JOB_SEND_EMAIL } = await import('../lib/queue')
-          await boss.send(JOB_SEND_EMAIL, {
-            recipientId: recipient.id,
-            campaignId,
-            accountId: account.id,
-            templateVariantId: null,
-            subjectVariantId: null,
-            sequenceStepId: nextStep.id,
-          }, { startAfter: delaySeconds })
+          await boss.insert(JOB_SEND_EMAIL, [finalJob])
         }
       }
       

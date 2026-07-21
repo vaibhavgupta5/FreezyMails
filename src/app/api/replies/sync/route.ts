@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     for (const account of accounts) {
       try {
         await pollReplies(account)
-      } catch (err: any) {
+      } catch (_err: unknown) { const err = _err as Error;
         console.error(`Failed to poll IMAP for account ${account.id}:`, err)
         // Optionally mark account as inactive if credentials are fundamentally broken
         if (err.message && err.message.includes('ciphertext format')) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, syncedAccounts: accounts.length })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     console.error('Error syncing IMAP replies:', error)
     return NextResponse.json({ error: error.message || 'Failed to sync replies' }, { status: 500 })
   }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getUser } from '@/lib/supabase'
 import boss, { JOB_SEND_EMAIL, startBoss } from '@/lib/queue'
+import { distributeJobs } from '@/lib/scheduling'
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -26,7 +27,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
   let accountIndex = 0
 
-  const jobs = campaign.recipients.map(r => {
+  const jobs: Record<string, unknown>[] = campaign.recipients.map(r => {
     const account = accounts[accountIndex]
     accountIndex = (accountIndex + 1) % accounts.length
     
@@ -51,8 +52,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   })
 
   if (jobs.length > 0) {
+    const finalJobs = distributeJobs(jobs, campaign.pacingType);
     await boss.createQueue(JOB_SEND_EMAIL)
-    await boss.insert(JOB_SEND_EMAIL, jobs)
+    await boss.insert(JOB_SEND_EMAIL, finalJobs)
   }
 
   return NextResponse.json({ ok: true, queued: jobs.length })

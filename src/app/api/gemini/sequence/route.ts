@@ -58,7 +58,7 @@ Example format:
     }
     
     return NextResponse.json({ sequence })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     console.error('Failed to generate sequence:', error)
     return NextResponse.json({ error: 'Failed to generate sequence' }, { status: 500 })
   }

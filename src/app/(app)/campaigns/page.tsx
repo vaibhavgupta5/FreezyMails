@@ -14,7 +14,7 @@ export default async function CampaignsPage() {
         select: { status: true }
       },
       mailEvents: {
-        select: { type: true }
+        select: { type: true, occurredAt: true }
       }
     }
   })
@@ -24,6 +24,7 @@ export default async function CampaignsPage() {
     let sent = 0
     let opens = 0
     let replies = 0
+    let lastSentAt: Date | null = null
 
     c.recipients.forEach(r => {
       if (r.status === 'SENT') sent++
@@ -32,7 +33,12 @@ export default async function CampaignsPage() {
     c.mailEvents.forEach(e => {
       if (e.type === 'OPENED') opens++
       if (e.type === 'REPLIED') replies++
-      if (e.type === 'SENT') sent++ // count SENT events as well for accuracy
+      if (e.type === 'SENT') {
+        sent++ // count SENT events as well for accuracy
+        if (!lastSentAt || e.occurredAt > lastSentAt) {
+          lastSentAt = e.occurredAt
+        }
+      }
     })
 
     // Remove duplicates if a recipient was both SENT status and has a SENT event
@@ -48,7 +54,8 @@ export default async function CampaignsPage() {
       stats: {
         sent: finalSent,
         opens,
-        replies
+        replies,
+        lastSentAt: lastSentAt ? (lastSentAt as Date).toISOString() : null
       }
     }
   })

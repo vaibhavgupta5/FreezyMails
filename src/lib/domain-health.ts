@@ -25,7 +25,7 @@ export async function checkDomainHealth(domain: string, ipAddress?: string): Pro
         break
       }
     }
-  } catch (e: any) {
+  } catch (_e: unknown) { const e = _e as Error & { code?: string };
     if (e.code !== 'ENODATA' && e.code !== 'ENOTFOUND') {
       result.spf = { status: 'fail', message: `DNS lookup failed: ${e.message}` }
     }
@@ -59,7 +59,7 @@ export async function checkDomainHealth(domain: string, ipAddress?: string): Pro
         break
       }
     }
-  } catch (e: any) {
+  } catch (_e: unknown) { const e = _e as Error & { code?: string };
     if (e.code !== 'ENODATA' && e.code !== 'ENOTFOUND') {
       result.dmarc = { status: 'fail', message: `DNS lookup failed: ${e.message}` }
     }
@@ -94,7 +94,7 @@ export async function checkDomainHealth(domain: string, ipAddress?: string): Pro
         await dns.resolve4(`${reversedIp}.zen.spamhaus.org`)
         // If it resolves, it's blacklisted
         result.blacklist = { status: 'fail', message: `IP ${ip} is listed on Spamhaus` }
-      } catch (e: any) {
+      } catch (_e: unknown) { const e = _e as Error & { code?: string };
         if (e.code === 'ENOTFOUND') {
           // This is the expected result if not listed
           result.blacklist = { status: 'pass', message: 'Domain IP is not listed on Spamhaus' }

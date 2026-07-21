@@ -13,9 +13,13 @@ export default async function SettingsPage() {
   })
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold">Settings</h1>
-      <SettingsForm user={dbUser || { id: user.id, name: '', email: user.email || '', createdAt: new Date(), avatarUrl: null, defaultAccountId: null }} accounts={accounts} />
+    <div className="skeu-page">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-semibold text-text-primary">Settings</h1>
+        </div>
+        <SettingsForm user={dbUser || { id: user.id, name: '', email: user.email || '', createdAt: new Date(), avatarUrl: null, defaultAccountId: null }} accounts={accounts} />
+      </div>
     </div>
   )
 }

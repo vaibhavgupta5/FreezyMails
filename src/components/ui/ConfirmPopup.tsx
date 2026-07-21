@@ -42,25 +42,21 @@ export default function ConfirmPopup({
         if (!open && !isLoading) onClose();
       }}
     >
-      <AlertDialogContent className="skeu-card border-border-subtle p-6 max-w-md sm:rounded-2xl">
-        <AlertDialogHeader className="flex flex-col items-center text-center space-y-4">
-          {isDanger && (
-            <div className="w-12 h-12 rounded-full bg-danger-bg flex items-center justify-center">
-              <AlertTriangle className="text-danger-text" size={24} />
-            </div>
-          )}
-          <AlertDialogTitle className="text-xl font-bold text-text-primary text-center w-full">
+      <AlertDialogContent className="bg-surface-100 border border-surface-400 p-6 max-w-md sm:rounded-xl shadow-xl">
+        <AlertDialogHeader className="text-left space-y-3">
+          <AlertDialogTitle className="text-lg font-semibold text-surface-900 flex items-center gap-2">
+            {isDanger && <AlertTriangle className="text-red-500 w-5 h-5" />}
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-text-muted text-sm leading-relaxed text-center w-full">
+          <AlertDialogDescription className="text-surface-600 text-sm leading-relaxed">
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex sm:flex-row gap-3 mt-8 sm:space-x-0 w-full">
+        <AlertDialogFooter className="flex justify-end gap-2  w-full sm:space-x-0">
           <AlertDialogCancel
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 font-medium bg-surface-200 border-none hover:bg-surface-300 dark:bg-surface-800 dark:hover:bg-surface-700 dark:text-surface-50 mt-0"
+            className="font-medium bg-surface-200 border border-surface-400 text-surface-900 hover:bg-surface-300 transition-colors mt-0 h-9 px-4"
           >
             {cancelText}
           </AlertDialogCancel>
@@ -70,7 +66,11 @@ export default function ConfirmPopup({
               onConfirm();
             }}
             disabled={isLoading}
-            className={`flex-1 font-medium text-white  -skeu-btn border border-black/10 ${isDanger ? "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600" : "bg-primary-base hover:bg-primary-hover dark:bg-primary-base dark:hover:bg-primary-hover"}`}
+            className={`font-medium h-9 px-4 transition-colors ${
+              isDanger
+                ? "bg-red-600 hover:bg-red-700 text-white border border-red-700"
+                : "bg-surface-900 hover:bg-surface-800 text-surface-50 border border-surface-950"
+            }`}
           >
             {isLoading ? "Loading..." : confirmText}
           </AlertDialogAction>

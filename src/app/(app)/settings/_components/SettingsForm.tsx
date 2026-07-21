@@ -79,7 +79,7 @@ export default function SettingsForm({ user, accounts }: { user: User, accounts:
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
-            <Input className="skeu-input bg-surface-100 text-surface-500 cursor-not-allowed" value={user.email} disabled />
+            <Input className="skeu-input bg-bg-subtle text-text-muted cursor-not-allowed opacity-70" value={user.email} disabled />
           </div>
         </div>
       </div>
@@ -98,30 +98,30 @@ export default function SettingsForm({ user, accounts }: { user: User, accounts:
                 {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <p className="text-xs text-surface-600 mt-1">This account will be pre-selected when creating new campaigns.</p>
+            <p className="text-xs text-text-muted mt-1">This account will be pre-selected when creating new campaigns.</p>
           </div>
           <Button variant="primary" className="mt-2" onClick={handleSaveProfile} isLoading={loading}>Save Settings</Button>
         </div>
       </div>
 
-      <div className="skeu-card border-red-200">
-        <h2 className="text-xl font-semibold text-red-600 mb-4">Danger Zone</h2>
+      <div className="skeu-card border-danger-text/20">
+        <h2 className="text-xl font-semibold text-danger-text mb-4">Danger Zone</h2>
         
         <div className="space-y-6">
-          <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-            <h3 className="font-semibold text-red-900 mb-1">Delete all campaigns</h3>
-            <p className="text-sm text-red-700 mb-3">This will permanently delete all your campaigns, templates, and analytics.</p>
-            <div className="flex gap-2 max-w-md">
-              <Input className="skeu-input border-red-300" placeholder="Type CONFIRM" value={campaignConfirm} onChange={e => setCampaignConfirm(e.target.value)} />
+          <div className="p-4 border border-danger-text/20 rounded-lg bg-danger-bg">
+            <h3 className="font-semibold text-danger-text mb-1">Delete all campaigns</h3>
+            <p className="text-sm text-danger-text/80 mb-3">This will permanently delete all your campaigns, templates, and analytics.</p>
+            <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+              <Input className="skeu-input border-danger-text/30" placeholder="Type CONFIRM" value={campaignConfirm} onChange={e => setCampaignConfirm(e.target.value)} />
               <Button variant="danger" className="whitespace-nowrap" onClick={handleDeleteCampaigns} isLoading={loading} disabled={campaignConfirm !== 'CONFIRM'}>Delete Campaigns</Button>
             </div>
           </div>
 
-          <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-            <h3 className="font-semibold text-red-900 mb-1">Delete account</h3>
-            <p className="text-sm text-red-700 mb-3">This will permanently delete your account and all associated data.</p>
-            <div className="flex gap-2 max-w-md">
-              <Input className="skeu-input border-red-300" placeholder={`Type ${user.email}`} value={accountConfirm} onChange={e => setAccountConfirm(e.target.value)} />
+          <div className="p-4 border border-danger-text/20 rounded-lg bg-danger-bg">
+            <h3 className="font-semibold text-danger-text mb-1">Delete account</h3>
+            <p className="text-sm text-danger-text/80 mb-3">This will permanently delete your account and all associated data.</p>
+            <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+              <Input className="skeu-input border-danger-text/30" placeholder={`Type ${user.email}`} value={accountConfirm} onChange={e => setAccountConfirm(e.target.value)} />
               <Button variant="danger" className="whitespace-nowrap" onClick={handleDeleteAccount} isLoading={loading} disabled={accountConfirm !== user.email}>Delete Account</Button>
             </div>
           </div>

@@ -52,7 +52,7 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ success: true, updated: validIds.length })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

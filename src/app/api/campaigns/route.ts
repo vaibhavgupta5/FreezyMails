@@ -15,8 +15,8 @@ const campaignSchema = z.object({
       email: z.string().email('Invalid email address')
     }).passthrough()
   ).min(1, 'At least one recipient is required'),
-  sendWindowStart: z.number().nullable().optional(),
-  sendWindowEnd: z.number().nullable().optional(),
+  pacingType: z.string().optional(),
+  dailyLimit: z.number().nullable().optional(),
   timezone: z.string().optional(),
   scheduledAt: z.string().nullable().optional(),
   templateVariants: z.array(z.object({
@@ -66,9 +66,8 @@ export async function POST(request: Request) {
           },
           status: 'DRAFT',
           abEnabled: hasVariants,
-          sendWindowStart: data.sendWindowStart,
-          sendWindowEnd: data.sendWindowEnd,
-          timezone: data.timezone || 'UTC',
+          pacingType: data.pacingType || 'SLOW',
+          dailyLimit: data.dailyLimit || null,
           scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
         }
       })

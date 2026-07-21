@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     const daily = Array.from(dailyMap.values()).reverse()
 
     return NextResponse.json({ daily, funnel })
-  } catch (error: any) {
+  } catch (_error: unknown) { const error = _error as Error;
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
