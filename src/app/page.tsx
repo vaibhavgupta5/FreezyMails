@@ -14,7 +14,8 @@ import dynamic from "next/dynamic";
 import { ScrollReveal } from "./_components/ScrollReveal";
 import { InteractiveToggle } from "./_components/InteractiveToggle";
 import { Spotlight } from "@/components/ui/Spotlight";
-import { MobileNav } from "./_components/MobileNav";
+import { MarketingHeader } from "./_components/MarketingHeader";
+import { MarketingFooter } from "./_components/MarketingFooter";
 
 const DashboardPreview = dynamic(() => import("./_components/DashboardPreview"), {
   loading: () => <div className="animate-pulse bg-bg-subtle rounded-xl h-[400px] w-full" />
@@ -54,51 +55,7 @@ export default async function LandingPage() {
         ></div>
 
         {/* --- 4.0 Header / Navigation --- */}
-        <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-          <nav className="pointer-events-auto bg-bg-base/80 backdrop-blur-xl border border-border-subtle shadow-lg shadow-black/5 rounded-lg px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-6 sm:gap-12 transition-all duration-300 w-full max-w-7xl mx-auto">
-            <Logo textColor="text-text-primary drop-shadow-sm" />
-            <div className="flex items-center">
-              <div className="hidden sm:flex items-center gap-6">
-                <Link
-                  href="#features"
-                  className="text-sm font-medium hover:underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-primary-base transition-all"
-                >
-                  Features
-                </Link>
-                <Link
-                  href="#use-cases"
-                  className="text-sm font-medium hover:underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-primary-base transition-all"
-                >
-                  Use Cases
-                </Link>
-                <a
-                  href="https://github.com/vaibhavgupta5/FreezyMails"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium hover:underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-primary-base transition-all hidden md:block"
-                >
-                  GitHub
-                </a>
-                <Link
-                  href="/login"
-                  className="text-sm font-medium hover:underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-primary-base transition-all mr-2"
-                >
-                  Log in
-                </Link>
-              </div>
-              <Link
-                href={user ? "/dashboard" : "/login"}
-                className={cn(
-                  buttonVariants({ variant: "default", size: "sm" }),
-                  "hidden sm:inline-flex sm:text-sm text-xs px-3 py-1.5 sm:px-4 sm:py-2 font-bold shadow-sm sm:ml-4",
-                )}
-              >
-                {user ? "Dashboard" : "Start Free"}
-              </Link>
-              <MobileNav hasUser={!!user} />
-            </div>
-          </nav>
-        </div>
+        <MarketingHeader />
 
         {/* --- 4.1 Hero --- */}
         <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-32 md:py-20 lg:py-24 flex flex-col md:flex-row items-center gap-14 min-h-[85vh]">
@@ -653,41 +610,7 @@ export default async function LandingPage() {
         </section>
 
         {/* --- 4.9 Footer --- */}
-        <footer className="border-t border-border-subtle py-12 text-center text-text-muted relative z-10 px-4">
-          <div className="flex flex-wrap justify-center gap-6 mb-6">
-            <Link
-              href="#features"
-              className="text-sm font-medium hover:text-primary-base transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href="#use-cases"
-              className="text-sm font-medium hover:text-primary-base transition-colors"
-            >
-              Use Cases
-            </Link>
-            <a
-              href="https://github.com/vaibhavgupta5/FreezyMails"
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm font-medium hover:text-primary-base transition-colors"
-            >
-              GitHub
-            </a>
-          </div>
-          <p className="text-sm flex flex-wrap items-center justify-center gap-1">
-            © {new Date().getFullYear()} FreezyMails. Made by{" "}
-            <a
-              href="https://github.com/vaibhavgupta5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium hover:text-primary-base transition-colors underline decoration-ice-300 decoration-2 underline-offset-2"
-            >
-              vaibhavgupta5
-            </a>
-          </p>
-        </footer>
+        <MarketingFooter />
       </div>
     </>
   );

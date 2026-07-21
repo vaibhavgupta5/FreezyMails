@@ -1,5 +1,6 @@
 import { getUser } from '@/lib/supabase'
 import prisma from '@/lib/prisma'
+import { User } from '@prisma/client'
 import SettingsForm from './_components/SettingsForm'
 
 export default async function SettingsPage() {
@@ -18,7 +19,7 @@ export default async function SettingsPage() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-semibold text-text-primary">Settings</h1>
         </div>
-        <SettingsForm user={dbUser || { id: user.id, name: '', email: user.email || '', createdAt: new Date(), avatarUrl: null, defaultAccountId: null }} accounts={accounts} />
+        <SettingsForm user={dbUser || { id: user.id, name: '', email: user.email || '', createdAt: new Date(), avatarUrl: null, defaultAccountId: null, hasDismissedCampaignNudge: false, hasSeenTour: false } as User} accounts={accounts} />
       </div>
     </div>
   )
