@@ -1,4 +1,4 @@
-import { Inbox, Users, BarChart2, Settings } from "lucide-react";
+import { Users, Settings } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { getUser } from "@/lib/supabase";
 import Link from "next/link";
@@ -24,22 +24,15 @@ export default async function Dashboard() {
  "there";
 
  const now = new Date();
- const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
  const sevenDaysAgo = new Date(now);
  sevenDaysAgo.setDate(now.getDate() - 7);
-
- const fourteenDaysAgo = new Date(now);
- fourteenDaysAgo.setDate(now.getDate() - 14);
 
  // Fetch Data
  const [
  accounts,
  campaigns,
- eventsToday,
  eventsLast7Days,
- eventsPrev7Days,
- unreadReplies,
  recipients,
  ] = await Promise.all([
  prisma.emailAccount.findMany({
@@ -50,24 +43,10 @@ export default async function Dashboard() {
  include: { _count: { select: { recipients: true } } },
  }),
  prisma.mailEvent.findMany({
- where: { campaign: { userId: user.id }, occurredAt: { gte: startOfDay } },
- }),
- prisma.mailEvent.findMany({
  where: {
  campaign: { userId: user.id },
  occurredAt: { gte: sevenDaysAgo },
  },
- }),
- prisma.mailEvent.findMany({
- where: {
- campaign: { userId: user.id },
- occurredAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
- },
- }),
- prisma.reply.findMany({
- where: { campaign: { userId: user.id }, isRead: false },
- include: { campaign: true, recipient: true },
- orderBy: { receivedAt: "desc" },
  }),
  prisma.recipient.findMany({
  where: { campaign: { userId: user.id } },

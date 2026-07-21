@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BarList, Card, Title, Text } from '@tremor/react'
+import { BarList, Title, Text } from '@tremor/react'
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FunnelChart() {

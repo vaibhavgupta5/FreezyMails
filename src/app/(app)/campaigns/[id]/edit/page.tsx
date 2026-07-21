@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import CampaignWizard from "../../_components/CampaignWizard";
 import { useCampaignStore } from "@/stores/useCampaignStore";
 import PageSkeleton from "../../../_components/PageSkeleton";

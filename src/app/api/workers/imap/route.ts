@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import boss, { JOB_POLL_IMAP, startBoss } from '@/lib/queue'
-import { pollReplies } from '@/lib/imap'
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get('authorization')

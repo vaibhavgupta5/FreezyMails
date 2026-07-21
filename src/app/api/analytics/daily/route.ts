@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       dailyMap.set(dateStr, { date: dateStr, sent: 0, opened: 0, clicked: 0, replied: 0 })
     }
 
-    let funnel = { sent: 0, opened: 0, clicked: 0, replied: 0 }
+    const funnel = { sent: 0, opened: 0, clicked: 0, replied: 0 }
 
     for (const ev of events) {
       const dateStr = format(ev.occurredAt, 'MMM dd')

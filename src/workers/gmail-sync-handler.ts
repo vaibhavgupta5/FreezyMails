@@ -1,4 +1,3 @@
-import { EmailAccount } from '@prisma/client'
 import prisma from '../lib/prisma'
 import { pollReplies } from '../lib/imap'
 import type { Job } from 'pg-boss'

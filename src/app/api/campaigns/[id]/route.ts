@@ -67,7 +67,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
   try {
     const body = await request.json()
-    const { name, dailyLimit, pacingType, timezone, scheduledAt } = body
+    const { name, dailyLimit, pacingType, scheduledAt } = body
 
     const campaign = await prisma.campaign.findUnique({
       where: { id: params.id, userId: user.id }

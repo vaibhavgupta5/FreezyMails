@@ -14,7 +14,7 @@ export default function CampaignActions({ id, status, name, dailyLimit }: { id: 
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [showEdit, setShowEdit] = useState(false)
+  const [] = useState(false)
 
   const handleSend = async () => {
     setLoading(true)

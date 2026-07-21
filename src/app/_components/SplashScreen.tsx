@@ -1,13 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from 'react';
 import { Logo } from "@/components/ui/Logo";
 
 export default function SplashScreen() {
  const [show, setShow] = useState(true);
 
- useEffect(() => {
+ useLayoutEffect(() => {
  // Show the splash screen for 1.5s, then gracefully fade out
  const hideTimer = setTimeout(() => {
  setShow(false);

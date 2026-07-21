@@ -11,7 +11,6 @@ import {
 import PageSkeleton from "../_components/PageSkeleton";
 import { useInboxStore } from "@/stores/useInboxStore";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Drawer } from "@/components/ui/drawer";
 import EmailDetailDrawer from "./_components/EmailDetailDrawer";
 import { toast } from "sonner";

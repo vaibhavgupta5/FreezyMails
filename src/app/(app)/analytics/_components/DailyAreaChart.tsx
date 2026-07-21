@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AreaChart, Card, Title } from '@tremor/react'
+import { AreaChart, Title } from '@tremor/react'
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DailyAreaChart() {

@@ -18,7 +18,6 @@ import {
 import {
   Send,
   Sparkles,
-  AlertCircle,
   X,
   Copy,
   Flag,

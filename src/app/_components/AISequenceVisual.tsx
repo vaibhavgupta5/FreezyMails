@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {  CornerDownRight, Loader2 } from "lucide-react";
 
 export default function AISequenceVisual() {
   const [stage, setStage] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const cycle = async () => {
       while (true) {
         setStage(0);
@@ -121,7 +121,6 @@ function Typewriter({ text, delay }: { text: string; delay: number }) {
   const [displayedText, setDisplayedText] = useState("");
 
   useEffect(() => {
-    setDisplayedText("");
     let i = 0;
     const timeout = setTimeout(() => {
       const interval = setInterval(() => {

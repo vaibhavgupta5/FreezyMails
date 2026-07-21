@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { User, CornerDownRight } from "lucide-react";
 
 export default function InboxVisual() {
   const [messages, setMessages] = useState<number[]>([]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let count = 0;
     const interval = setInterval(() => {
       count++;

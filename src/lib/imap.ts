@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import { EmailAccount, MailEventType, Prisma, CampaignStatus } from "@prisma/client";
+import { EmailAccount, MailEventType } from "@prisma/client";
 import { decryptString } from "./encrypt";
 import prisma from "./prisma";
 import { simpleParser } from "mailparser";

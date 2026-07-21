@@ -31,10 +31,7 @@ export default function CampaignList({ initialCampaigns }: { initialCampaigns: C
     c.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  const formatPercentage = (count: number, total: number) => {
-    if (total === 0) return '-'
-    return `${Math.round((count / total) * 100)}%`
-  }
+
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {

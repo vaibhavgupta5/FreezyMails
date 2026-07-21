@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 import {
- Snowflake,
  LogOut,
  LayoutDashboard,
  Mail,

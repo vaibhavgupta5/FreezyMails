@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {  AlertTriangle } from "lucide-react";
 
 export default function DashboardPreview() {
   const [sentCount, setSentCount] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Initial rapid count up
     const timeout = setTimeout(() => {
       setSentCount(436);

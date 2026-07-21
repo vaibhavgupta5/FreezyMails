@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server'
-import boss, { JOB_SEND_EMAIL, startBoss } from '@/lib/queue'
-import prisma from '@/lib/prisma'
-import { renderTemplate } from '@/lib/template-parser'
-import { sendEmail } from '@/lib/mailer'
-import { MailEventType } from '@prisma/client'
+import { startBoss } from '@/lib/queue'
 
 export async function POST(request: Request) {
   // Protect with CRON_SECRET header

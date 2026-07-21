@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Terminal, CheckCircle2, Search, AlertCircle } from "lucide-react";
 
 export default function TerminalScraper() {
   const [step, setStep] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const cycle = async () => {
       while (true) {
         setStep(0);

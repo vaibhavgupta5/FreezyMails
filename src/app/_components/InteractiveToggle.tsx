@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export function InteractiveToggle() {
   const [isSlow, setIsSlow] = useState(false);
@@ -100,7 +100,11 @@ export function InteractiveToggle() {
             // Fast drip: clustered at the start
             // Slow drip: scattered randomly across the whole window
             const fastX = (i * 3);
-            const slowX = 5 + Math.random() * 90;
+            
+            // Use a stable pseudo-random value based on index to keep render pure
+            const pseudoRandom = Math.abs(Math.sin(i + 1) * 10000 % 1);
+            
+            const slowX = 5 + pseudoRandom * 90;
 
             return (
               <motion.div
@@ -115,7 +119,7 @@ export function InteractiveToggle() {
                   type: "spring",
                   stiffness: 400,
                   damping: 30,
-                  delay: isSlow ? Math.random() * 0.5 : i * 0.02,
+                  delay: isSlow ? pseudoRandom * 0.5 : i * 0.02,
                 }}
               />
             );

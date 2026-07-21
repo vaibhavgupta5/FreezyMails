@@ -1,24 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDown, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 
 export default function ABTestingVisual() {
   const [emails, setEmails] = useState<{ id: number; variant: "A" | "B" }[]>([]);
-  const [stats, setStats] = useState({ a: 0, b: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let count = 0;
     const interval = setInterval(() => {
       count++;
-      const variant = Math.random() > 0.5 ? "A" : "B";
+      const variant: "A" | "B" = Math.random() > 0.5 ? "A" : "B";
       
       setEmails((prev) => [...prev, { id: count, variant }].slice(-5));
-      setStats((prev) => ({
-        ...prev,
-        [variant.toLowerCase()]: prev[variant.toLowerCase() as keyof typeof prev] + 1
-      }));
     }, 1200);
 
     return () => clearInterval(interval);

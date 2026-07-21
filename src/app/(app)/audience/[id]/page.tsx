@@ -8,7 +8,6 @@ import {
   Trash2,
   Save,
   Search,
-  Filter,
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,

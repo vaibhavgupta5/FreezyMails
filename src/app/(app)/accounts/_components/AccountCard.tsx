@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { RefreshCcw, ShieldCheck, ShieldAlert, Activity } from 'lucide-react'
+import { RefreshCcw, ShieldCheck, ShieldAlert } from 'lucide-react'
 import RefreshHealthButton from './RefreshHealthButton'
 import DisconnectAccountButton from './DisconnectAccountButton'
-import { Button } from '@/components/ui/button'
 
 type AccountProps = {
  acc: {
@@ -24,30 +23,10 @@ export default function AccountCard({ acc: initialAcc }: AccountProps) {
  const [acc, setAcc] = useState(initialAcc)
  const [isHealthLoading, setIsHealthLoading] = useState(false)
  const [domainHealth, setDomainHealth] = useState<Record<string, { status: string; message: string }> | null>(null)
- const [isTogglingWarmup, setIsTogglingWarmup] = useState(false)
 
  let healthColor = "text-green-600"
  if (acc.healthScore < 50) healthColor = "text-danger-text"
  else if (acc.healthScore <= 80) healthColor = "text-warning-text"
-
- const toggleWarmup = async () => {
- setIsTogglingWarmup(true)
- try {
- const res = await fetch(`/api/accounts/${acc.id}/warmup`, {
- method: 'POST',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify({ isWarmupEnabled: !acc.isWarmupEnabled })
- })
- if (!res.ok) throw new Error('Failed to toggle warmup')
- const updated = await res.json()
- setAcc({ ...acc, isWarmupEnabled: updated.isWarmupEnabled })
- toast.success(updated.isWarmupEnabled ? 'Warmup started' : 'Warmup paused')
- } catch (_err: unknown) { const err = _err as Error;
- toast.error(err.message)
- } finally {
- setIsTogglingWarmup(false)
- }
- }
 
  const checkDomainHealth = async () => {
  setIsHealthLoading(true)
