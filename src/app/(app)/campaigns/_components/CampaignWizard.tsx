@@ -524,9 +524,13 @@ export default function CampaignWizard({ campaignId }: { campaignId?: string }) 
  ) : (
  <Select
  value={templateId || "none"}
- onValueChange={(val) =>
- setDetails(name, val === "none" ? "" : val, accountIds)
+ onValueChange={(val) => {
+ if (val === "create_new") {
+ router.push("/templates/new");
+ return;
  }
+ setDetails(name, val === "none" ? "" : val, accountIds);
+ }}
  >
  <SelectTrigger className="skeu-select bg-bg-base">
  <SelectValue placeholder="Select Template" />
@@ -538,6 +542,9 @@ export default function CampaignWizard({ campaignId }: { campaignId?: string }) 
  {t.name}
  </SelectItem>
  ))}
+ <SelectItem value="create_new" className="text-primary-base font-medium border-t mt-1 pt-1">
+ + Create new template
+ </SelectItem>
  </SelectContent>
  </Select>
  )}
