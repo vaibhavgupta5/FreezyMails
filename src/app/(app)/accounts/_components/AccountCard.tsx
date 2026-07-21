@@ -23,7 +23,7 @@ type AccountProps = {
 export default function AccountCard({ acc: initialAcc }: AccountProps) {
  const [acc, setAcc] = useState(initialAcc)
  const [isHealthLoading, setIsHealthLoading] = useState(false)
- const [domainHealth, setDomainHealth] = useState<any>(null)
+ const [domainHealth, setDomainHealth] = useState<Record<string, { status: string; message: string }> | null>(null)
  const [isTogglingWarmup, setIsTogglingWarmup] = useState(false)
 
  let healthColor = "text-green-600"

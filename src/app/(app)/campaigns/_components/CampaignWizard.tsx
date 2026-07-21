@@ -100,7 +100,7 @@ export default function CampaignWizard({ campaignId }: { campaignId?: string }) 
  // Audience import mapping states
  const [isMappingDrawerOpen, setIsMappingDrawerOpen] = useState(false);
  const [isFetchingList, setIsFetchingList] = useState(false);
- const [fetchedContacts, setFetchedContacts] = useState<any[]>([]);
+ const [fetchedContacts, setFetchedContacts] = useState<{ email?: string; customFields?: Record<string, string> }[]>([]);
  const [availableListFields, setAvailableListFields] = useState<string[]>([]);
  const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({});
 
@@ -290,7 +290,7 @@ export default function CampaignWizard({ campaignId }: { campaignId?: string }) 
  const fieldsSet = new Set<string>();
  fieldsSet.add("email"); // email is always there
  
- data.contacts.forEach((contact: any) => {
+ data.contacts.forEach((contact: { email?: string; customFields?: Record<string, string> }) => {
  if (contact.customFields) {
  Object.keys(contact.customFields).forEach((k) => fieldsSet.add(k));
  }
@@ -320,7 +320,7 @@ export default function CampaignWizard({ campaignId }: { campaignId?: string }) 
  const delimiter = "\t";
  const rows = [requiredHeaders.join(delimiter)];
  
- fetchedContacts.forEach((contact: any) => {
+ fetchedContacts.forEach((contact: { email?: string; customFields?: Record<string, string> }) => {
  const values = requiredHeaders.map((h) => {
  const mappedListField = fieldMapping[h];
  if (!mappedListField) return ""; // Not mapped

@@ -33,7 +33,20 @@ interface CampaignDraftState {
   setDailyLimit: (limit: number | null) => void;
   setPacingType: (type: 'SLOW' | 'FAST') => void;
   resetDraft: () => void;
-  loadCampaign: (campaign: any, recipients: any[], templates: Template[]) => void;
+  loadCampaign: (
+    campaign: {
+      name?: string;
+      templateId?: string;
+      emailAccounts?: { id: string }[];
+      abTemplateVariants?: { name: string; body: string; splitPercent?: number; subjectVariants?: { name: string; subject: string; splitPercent?: number }[] }[];
+      timezone?: string;
+      scheduledAt?: string | Date | null;
+      dailyLimit?: number | null;
+      pacingType?: 'SLOW' | 'FAST';
+    },
+    recipients: { email: string; dynamicData?: string | Record<string, string> }[],
+    templates: Template[]
+  ) => void;
   setScheduledAt: (date: string | null) => void;
 }
 
@@ -167,11 +180,11 @@ export const useCampaignStore = create<CampaignDraftState>()(
           recipientsText = rows.join('\n');
         }
 
-        const templateVariants = campaign.abTemplateVariants?.map((tv: any) => ({
+        const templateVariants = campaign.abTemplateVariants?.map((tv: { name: string; body: string; splitPercent?: number; subjectVariants?: { name: string; subject: string; splitPercent?: number }[] }) => ({
           name: tv.name,
           body: tv.body,
           splitPercent: tv.splitPercent || 0,
-          subjectVariants: tv.subjectVariants?.map((sv: any) => ({
+          subjectVariants: tv.subjectVariants?.map((sv: { name: string; subject: string; splitPercent?: number }) => ({
             name: sv.name,
             subject: sv.subject,
             splitPercent: sv.splitPercent || 0

@@ -5,7 +5,7 @@ import { BarList, Card, Title, Text } from '@tremor/react'
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FunnelChart() {
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<{ name: string; value: number; color: string }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
