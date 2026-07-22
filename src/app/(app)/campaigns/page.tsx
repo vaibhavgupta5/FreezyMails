@@ -6,18 +6,32 @@ export default async function CampaignsPage() {
   const user = await getUser();
   if (!user) return null;
 
-  const campaignsData = await prisma.campaign.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      recipients: {
-        select: { status: true },
+  let campaignsData = [];
+
+  try {
+    campaignsData = await prisma.campaign.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        recipients: {
+          select: { status: true },
+        },
+        mailEvents: {
+          select: { type: true, occurredAt: true },
+        },
       },
-      mailEvents: {
-        select: { type: true, occurredAt: true },
-      },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("[Campaigns] DATABASE ERROR:", error);
+    return (
+      <div className="skeu-page p-8">
+        <div className="max-w-2xl mx-auto p-8 mt-12 text-center text-red-500 bg-red-500/10 rounded-md border border-red-500/20">
+          <h2 className="text-lg font-semibold mb-2">Database Connection Failed</h2>
+          <p>We could not connect to the database to load your campaigns.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Pre-calculate stats on the server
   const calculatedCampaigns = campaignsData.map((c) => {
