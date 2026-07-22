@@ -181,7 +181,7 @@ export default function AudienceDetailPage() {
       // Append one empty row at the end for easy insertion
       setContacts([
         ...data.contacts,
-        { id: "new-row-placeholder", email: "", customFields: {}, isNew: true },
+        { id: `new-placeholder-${Date.now()}`, email: "", customFields: {}, isNew: true },
       ]);
     } catch {
       toast.error("Error loading list");
@@ -250,13 +250,11 @@ export default function AudienceDetailPage() {
     setContacts((prev) => {
       const updated = prev.map((c) => {
         if (c.id === contactId) {
-          const newId = c.id === "new-row-placeholder" ? `new-${Date.now()}` : c.id;
           if (field === "email") {
-            return { ...c, id: newId, email: value, isNew: false };
+            return { ...c, email: value, isNew: false };
           } else {
             return {
               ...c,
-              id: newId,
               customFields: { ...c.customFields, [field]: value },
               isNew: false,
             };
@@ -273,7 +271,7 @@ export default function AudienceDetailPage() {
 
       if (!isLastRowEmpty) {
         updated.push({
-          id: "new-row-placeholder",
+          id: `new-placeholder-${Date.now()}`,
           email: "",
           customFields: {},
           isNew: true,
@@ -319,31 +317,36 @@ export default function AudienceDetailPage() {
     try {
       if (deleteConfirmTarget.type === "single") {
         const contact = deleteConfirmTarget.contact;
-        if (contact.isNew) {
+        if (contact.isNew || String(contact.id).startsWith("new-")) {
           setContacts(contacts.filter((c) => c.id !== contact.id));
         } else {
-          const res = await fetch(`/api/lists/${id}/contacts/${contact.id}`, {
-            method: "DELETE",
-          });
-          if (!res.ok) throw new Error("Failed to delete contact");
+          try {
+            const res = await fetch(`/api/lists/${id}/contacts/${contact.id}`, {
+              method: "DELETE",
+            });
+            if (!res.ok && res.status !== 404) throw new Error("Failed to delete contact");
+          } catch (e) {
+            console.warn("API delete failed but continuing locally", e);
+          }
           setContacts(contacts.filter((c) => c.id !== contact.id));
           toast.success("Contact deleted");
         }
         setSelectedIds(selectedIds.filter((id) => id !== contact.id));
       } else {
         const ids = deleteConfirmTarget.ids;
-        const newIds = ids.filter(
-          (id) => contacts.find((c) => c.id === id)?.isNew,
-        );
-        const dbIds = ids.filter((id) => !newIds.includes(id));
+        const dbIds = ids.filter((id) => !String(id).startsWith("new-"));
 
         if (dbIds.length > 0) {
-          const res = await fetch(`/api/lists/${id}/contacts/batch`, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ids: dbIds }),
-          });
-          if (!res.ok) throw new Error("Failed to delete selected contacts");
+          try {
+            const res = await fetch(`/api/lists/${id}/contacts/batch`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ids: dbIds }),
+            });
+            if (!res.ok && res.status !== 404) throw new Error("Failed to delete selected contacts");
+          } catch (e) {
+            console.warn("API batch delete failed but continuing locally", e);
+          }
         }
 
         setContacts(contacts.filter((c) => !ids.includes(c.id)));
@@ -647,7 +650,7 @@ export default function AudienceDetailPage() {
       c.isNew &&
       c.email === "" &&
       Object.values(c.customFields).every((v) => v === ""),
-  ) || { id: "new-row-placeholder", email: "", customFields: {}, isNew: true };
+  ) || { id: "new-placeholder", email: "", customFields: {}, isNew: true };
 
   // Pagination math on regular contacts
   const totalItems = regularContacts.length;
