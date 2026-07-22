@@ -42,3 +42,6 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     pending,
   })
 }
+
+
+export const dynamic = 'force-dynamic'

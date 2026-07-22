@@ -35,3 +35,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || 'Failed to sync replies' }, { status: 500 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

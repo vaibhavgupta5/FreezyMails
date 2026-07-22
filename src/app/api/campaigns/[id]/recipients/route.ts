@@ -23,3 +23,6 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
   return NextResponse.json(recipients)
 }
+
+
+export const dynamic = 'force-dynamic'

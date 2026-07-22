@@ -48,3 +48,6 @@ export async function GET(request: Request, props: { params: Promise<{ recipient
     },
   })
 }
+
+
+export const dynamic = 'force-dynamic'

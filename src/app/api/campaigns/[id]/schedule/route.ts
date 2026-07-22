@@ -31,3 +31,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return NextResponse.json({ error: error.message || 'Failed to schedule campaign' }, { status: 500 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

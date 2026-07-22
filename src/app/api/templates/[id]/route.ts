@@ -84,3 +84,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: error.message || 'Failed to delete or not found' }, { status: 400 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

@@ -58,3 +58,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

@@ -26,3 +26,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

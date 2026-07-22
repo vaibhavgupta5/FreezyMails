@@ -60,3 +60,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err.message }, { status: 400 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

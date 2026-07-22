@@ -258,3 +258,6 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
+
+
+export const dynamic = 'force-dynamic'

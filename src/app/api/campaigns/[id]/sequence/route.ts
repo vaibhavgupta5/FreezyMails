@@ -33,3 +33,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   await prisma.sequenceStep.delete({ where: { id: stepId } })
   return NextResponse.json({ success: true })
 }
+
+
+export const dynamic = 'force-dynamic'

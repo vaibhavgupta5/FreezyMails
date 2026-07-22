@@ -147,3 +147,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err.message || 'Failed to create campaign' }, { status: 400 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

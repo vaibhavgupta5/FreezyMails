@@ -59,3 +59,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
   return NextResponse.json({ ok: true, queued: jobs.length })
 }
+
+
+export const dynamic = 'force-dynamic'

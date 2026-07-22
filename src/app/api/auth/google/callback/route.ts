@@ -89,3 +89,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/accounts?error=${encodeURIComponent(err.message)}`)
   }
 }
+
+
+export const dynamic = 'force-dynamic'

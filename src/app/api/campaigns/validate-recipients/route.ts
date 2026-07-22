@@ -41,3 +41,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ valid: valid.length, invalid, duplicates, suppressed })
 }
+
+
+export const dynamic = 'force-dynamic'

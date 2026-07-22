@@ -63,3 +63,6 @@ Example format:
     return NextResponse.json({ error: 'Failed to generate sequence' }, { status: 500 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

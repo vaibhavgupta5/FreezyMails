@@ -27,3 +27,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
   return NextResponse.json({ newId: newCampaign.id })
 }
+
+
+export const dynamic = 'force-dynamic'

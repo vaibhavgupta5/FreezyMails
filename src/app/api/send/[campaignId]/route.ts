@@ -128,3 +128,6 @@ export async function POST(request: Request, props: { params: Promise<{ campaign
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'

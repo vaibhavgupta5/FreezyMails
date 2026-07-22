@@ -43,3 +43,6 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     return NextResponse.json({ error: err.message }, { status: 400 })
   }
 }
+
+
+export const dynamic = 'force-dynamic'
