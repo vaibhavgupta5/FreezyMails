@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     };
 
     return NextResponse.json({ success: true, extracted: result });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in public extract API:", error);
     // Return fallback domain-based structure if fetch completely failed
     try {
@@ -97,8 +97,8 @@ export async function POST(req: NextRequest) {
           error: "Failed to connect to website",
         } 
       });
-    } catch (e) {
-      return NextResponse.json({ error: error.message || "Extraction failed" }, { status: 500 });
+    } catch  {
+      return NextResponse.json({ error: "Extraction failed" }, { status: 500 });
     }
   }
 }

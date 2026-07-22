@@ -6,7 +6,6 @@ import {
   Inbox,
   GitMerge,
 } from "lucide-react";
-import { Logo } from "@/components/ui/Logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getUser } from "@/lib/supabase";
@@ -261,7 +260,7 @@ export default async function LandingPage() {
                   Paste a list of company URLs. FreezyMails scrapes each site
                   with Cheerio, checks mailto: links and regex-matched
                   addresses, and extracts HR and founder emails automatically.
-                  If the homepage doesn't have a strong contact, it crawls
+                  If the homepage doesn&apos;t have a strong contact, it crawls
                   About, Team, Careers, and Contact pages. Company and person
                   names are pulled from metadata - no manual lookup required.
                 </p>
@@ -325,7 +324,7 @@ export default async function LandingPage() {
               <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-12">
                   <h3 className="text-2xl md:text-3xl font-bold mb-4 font-outfit">
-                    Tell it who you're selling to. It{" "}
+                    Tell it who you&apos;re selling to. It{" "}
                     <u className="underline decoration-white decoration-4 underline-offset-4">
                       writes the sequence
                     </u>
@@ -333,7 +332,7 @@ export default async function LandingPage() {
                   </h3>
                   <p className="text-text-muted leading-relaxed max-w-2xl mx-auto">
                     Enter your Ideal Customer Profile, your offer, and the tone
-                    you want. FreezyMails calls Google's Generative AI to map
+                    you want. FreezyMails calls Google&apos;s Generative AI to map
                     out a complete multi-step sequence - an initial email plus
                     follow-ups on a delay - complete with subject lines and body
                     copy, ready to refine.
@@ -376,12 +375,12 @@ export default async function LandingPage() {
                       <Users className="text-text-primary" />
                     </div>
                     <h3 className="text-2xl font-bold mb-4 font-outfit">
-                      Everything else you'd expect from a real contact list
+                      Everything else you&apos;d expect from a real contact list
                     </h3>
                     <p className="text-text-muted leading-relaxed mb-8">
                       Bulk CSV import, dynamic custom fields, inline editing,
                       and smart statuses. The parts of list management that
-                      shouldn't need their own marketing section, but shouldn't
+                      shouldn&apos;t need their own marketing section, but shouldn&apos;t
                       be missing either.
                     </p>
                   </div>
@@ -452,11 +451,11 @@ export default async function LandingPage() {
                   Use Case Spotlight
                 </span>
                 <h2 className="text-4xl md:text-5xl font-bold leading-tight font-outfit text-text-primary">
-                  "Job hunting is a numbers game. FreezyMails makes the numbers{" "}
+                  &quot;Job hunting is a numbers game. FreezyMails makes the numbers{" "}
                   <u className="underline decoration-white decoration-4 underline-offset-4">
                     work in your favor
                   </u>
-                  ."
+                  .&quot;
                 </h2>
               </div>
             </ScrollReveal>
@@ -473,7 +472,7 @@ export default async function LandingPage() {
                   </h4>
                   <p className="text-text-muted leading-relaxed">
                     Paste a list of startup URLs and let the Web Extractor find
-                    the founders' or HR's email and the company name
+                    the founders&apos; or HR&apos;s email and the company name
                     automatically.
                   </p>
                 </div>
