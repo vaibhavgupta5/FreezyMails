@@ -1,49 +1,52 @@
-import prisma from '@/lib/prisma'
-import { getUser } from '@/lib/supabase'
-import CampaignList from './_components/CampaignList'
+import prisma from "@/lib/prisma";
+import { getUser } from "@/lib/supabase";
+import CampaignList from "./_components/CampaignList";
 
 export default async function CampaignsPage() {
-  const user = await getUser()
-  if (!user) return null
+  const user = await getUser();
+  if (!user) return null;
 
   const campaignsData = await prisma.campaign.findMany({
     where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     include: {
       recipients: {
-        select: { status: true }
+        select: { status: true },
       },
       mailEvents: {
-        select: { type: true, occurredAt: true }
-      }
-    }
-  })
+        select: { type: true, occurredAt: true },
+      },
+    },
+  });
 
   // Pre-calculate stats on the server
-  const calculatedCampaigns = campaignsData.map(c => {
-    let sent = 0
-    let opens = 0
-    let replies = 0
-    let lastSentAt: Date | null = null
+  const calculatedCampaigns = campaignsData.map((c) => {
+    let sent = 0;
+    let opens = 0;
+    let replies = 0;
+    let lastSentAt: Date | null = null;
 
-    c.recipients.forEach(r => {
-      if (r.status === 'SENT') sent++
-    })
+    c.recipients.forEach((r) => {
+      if (r.status === "SENT") sent++;
+    });
 
-    c.mailEvents.forEach(e => {
-      if (e.type === 'OPENED') opens++
-      if (e.type === 'REPLIED') replies++
-      if (e.type === 'SENT') {
-        sent++ // count SENT events as well for accuracy
+    c.mailEvents.forEach((e) => {
+      if (e.type === "OPENED") opens++;
+      if (e.type === "REPLIED") replies++;
+      if (e.type === "SENT") {
+        sent++; // count SENT events as well for accuracy
         if (!lastSentAt || e.occurredAt > lastSentAt) {
-          lastSentAt = e.occurredAt
+          lastSentAt = e.occurredAt;
         }
       }
-    })
+    });
 
     // Remove duplicates if a recipient was both SENT status and has a SENT event
-    const uniqueSent = c.recipients.filter(r => r.status === 'SENT').length
-    const finalSent = Math.max(uniqueSent, c.mailEvents.filter(e => e.type === 'SENT').length)
+    const uniqueSent = c.recipients.filter((r) => r.status === "SENT").length;
+    const finalSent = Math.max(
+      uniqueSent,
+      c.mailEvents.filter((e) => e.type === "SENT").length,
+    );
 
     return {
       id: c.id,
@@ -55,10 +58,10 @@ export default async function CampaignsPage() {
         sent: finalSent,
         opens,
         replies,
-        lastSentAt: lastSentAt ? (lastSentAt as Date).toISOString() : null
-      }
-    }
-  })
+        lastSentAt: lastSentAt ? (lastSentAt as Date).toISOString() : null,
+      },
+    };
+  });
 
   return (
     <div className="skeu-page">
@@ -66,5 +69,5 @@ export default async function CampaignsPage() {
         <CampaignList initialCampaigns={calculatedCampaigns} />
       </div>
     </div>
-  )
+  );
 }
