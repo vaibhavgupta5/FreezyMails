@@ -312,11 +312,14 @@ export default function AudienceDetailPage() {
 
   const handleConfirmDelete = async () => {
     if (!deleteConfirmTarget || deleting) return;
-    setDeleting(true);
+    
+    // Capture the target and immediately close the modal for a snappy UI
+    const target = deleteConfirmTarget;
+    setDeleteConfirmTarget(null);
 
     try {
-      if (deleteConfirmTarget.type === "single") {
-        const contact = deleteConfirmTarget.contact;
+      if (target.type === "single") {
+        const contact = target.contact;
         
         // Optimistic UI update (soft delete)
         setContacts((prev) => prev.filter((c) => c.id !== contact.id));
@@ -334,7 +337,7 @@ export default function AudienceDetailPage() {
           }
         }
       } else {
-        const ids = deleteConfirmTarget.ids;
+        const ids = target.ids;
         const dbIds = ids.filter((id) => !String(id).startsWith("new-"));
 
         // Optimistic UI update (soft delete)
@@ -358,9 +361,6 @@ export default function AudienceDetailPage() {
     } catch (_err: unknown) {
       const err = _err as Error;
       toast.error(err.message || "Error deleting contact(s)");
-    } finally {
-      setDeleting(false);
-      setDeleteConfirmTarget(null);
     }
   };
   const openHistory = async (email: string) => {
