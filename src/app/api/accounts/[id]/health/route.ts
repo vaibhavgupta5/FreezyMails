@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { computeHealthScore } from '@/lib/health'
 import { getUser } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const user = await getUser()
