@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { getUser } from '@/lib/supabase'
 import { checkDomainHealth } from '@/lib/domain-health'
 
+export const dynamic = 'force-dynamic'
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
   const user = await getUser()
