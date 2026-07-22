@@ -252,12 +252,13 @@ export default function AudienceDetailPage() {
         if (c.id === contactId) {
           const newId = c.id === "new-row-placeholder" ? `new-${Date.now()}` : c.id;
           if (field === "email") {
-            return { ...c, id: newId, email: value };
+            return { ...c, id: newId, email: value, isNew: false };
           } else {
             return {
               ...c,
               id: newId,
               customFields: { ...c.customFields, [field]: value },
+              isNew: false,
             };
           }
         }

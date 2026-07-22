@@ -30,9 +30,22 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   aggregates.forEach(agg => {
     total += agg._count._all
     if (agg.status === 'SENT') sent += agg._count._all
-    else if (agg.status === 'FAILED') failed += agg._count._all
+    else if (agg.status === 'FAILED' || agg.status === 'BOUNCED') failed += agg._count._all
     else if (agg.status === 'PENDING') pending += agg._count._all
   })
+
+  // Auto-heal: If all recipients are processed but it's still stuck in SENDING (e.g. due to a background worker race condition or a hard crash)
+  if (campaign.status === 'SENDING' && pending === 0 && total > 0) {
+    try {
+      await prisma.campaign.update({
+        where: { id: params.id },
+        data: { status: 'DONE' }
+      })
+      campaign.status = 'DONE'
+    } catch (e) {
+      console.error("Failed to auto-heal campaign status", e)
+    }
+  }
 
   return NextResponse.json({
     status: campaign.status,
