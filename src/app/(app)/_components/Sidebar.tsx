@@ -17,6 +17,7 @@ import {
  ChevronLeft,
  ChevronRight,
  Users,
+ Send,
 } from "lucide-react";
 import { createClientBrowser } from "@/lib/supabase-client";
 import { useInboxStore } from "@/stores/useInboxStore";
@@ -27,6 +28,7 @@ const navItems = [
  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
  { href: "/campaigns", label: "Campaigns", icon: Mail },
  { href: "/inbox", label: "Inbox", icon: Inbox, disabled: true },
+ { href: "/sent-mails", label: "Sent Mails", icon: Send },
  { href: "/audience", label: "Mailing Lists", icon: Users },
  { href: "/templates", label: "Templates", icon: FileText },
  { href: "/accounts", label: "Accounts", icon: Server },

@@ -1,5 +1,6 @@
 import { Users, Settings } from "lucide-react";
 import prisma from "@/lib/prisma";
+import { SendingVolumeChart } from "./_components/SendingVolumeChart";
 import { getUser } from "@/lib/supabase";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -117,16 +118,14 @@ export default async function Dashboard() {
     .filter((e) => e.type === "SENT")
     .forEach((e) => {
       const d = new Date(e.occurredAt);
-      d.setHours(0, 0, 0, 0);
       const dayData = last7DaysData.find(
-        (day) => day.date.getTime() === d.getTime(),
+        (day) => day.date.toDateString() === d.toDateString(),
       );
       if (dayData) {
         dayData.count++;
       }
     });
 
-  const maxVolume = Math.max(...last7DaysData.map((d) => d.count), 1);
 
   // --- ACTIVE CAMPAIGNS ---
   const activeCampaigns = campaigns
@@ -236,31 +235,7 @@ export default async function Dashboard() {
                 </span>
               </div>
             </div>
-            <div className="flex items-end gap-2 h-32 mt-4 pt-4 border-t border-border-subtle">
-              {last7DaysData.map((day, idx) => {
-                const heightPercent =
-                  maxVolume > 0
-                    ? Math.max((day.count / maxVolume) * 100, 4)
-                    : 4;
-                return (
-                  <div
-                    key={idx}
-                    className="flex-1 flex flex-col items-center gap-2 group"
-                  >
-                    <div className="w-full relative flex items-end justify-center h-full rounded-sm bg-bg-subtle/30 overflow-hidden">
-                      <div
-                        className="w-full bg-primary-base rounded-sm transition-all group-hover:opacity-80"
-                        style={{ height: `${heightPercent}%` }}
-                        title={`${day.count} sent`}
-                      ></div>
-                    </div>
-                    <span className="text-[10px] text-text-muted uppercase tracking-wider">
-                      {day.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <SendingVolumeChart data={last7DaysData} />
           </Card>
 
           {/* Domain Health */}

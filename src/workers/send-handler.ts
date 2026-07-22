@@ -124,7 +124,12 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
             recipientId: recipient.id,
             campaignId: campaign.id,
             type: MailEventType.SENT,
-            metadata: { messageId: sendResult.messageId, accountId: account.id }
+            metadata: { 
+              messageId: sendResult.messageId, 
+              accountId: account.id,
+              subject: renderedSubject,
+              body: finalBody
+            }
           }
         })
       ])
