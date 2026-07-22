@@ -33,7 +33,7 @@ export async function MarketingHeader() {
             >
               GitHub
             </a>
-            {user ? (
+            {/* {user ? (
               <Link
                 href="/dashboard"
                 className="text-sm font-medium hover:underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-primary-base transition-all mr-2"
@@ -47,7 +47,7 @@ export async function MarketingHeader() {
               >
                 Log in
               </Link>
-            )}
+            )} */}
           </div>
           <Link
             href={user ? "/dashboard" : "/login"}
