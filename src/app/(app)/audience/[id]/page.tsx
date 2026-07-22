@@ -317,9 +317,13 @@ export default function AudienceDetailPage() {
     try {
       if (deleteConfirmTarget.type === "single") {
         const contact = deleteConfirmTarget.contact;
-        if (contact.isNew || String(contact.id).startsWith("new-")) {
-          setContacts(contacts.filter((c) => c.id !== contact.id));
-        } else {
+        
+        // Optimistic UI update (soft delete)
+        setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+        setSelectedIds((prev) => prev.filter((id) => id !== contact.id));
+        toast.success("Contact deleted");
+
+        if (!contact.isNew && !String(contact.id).startsWith("new-")) {
           try {
             const res = await fetch(`/api/lists/${id}/contacts/${contact.id}`, {
               method: "DELETE",
@@ -328,13 +332,15 @@ export default function AudienceDetailPage() {
           } catch (e) {
             console.warn("API delete failed but continuing locally", e);
           }
-          setContacts(contacts.filter((c) => c.id !== contact.id));
-          toast.success("Contact deleted");
         }
-        setSelectedIds(selectedIds.filter((id) => id !== contact.id));
       } else {
         const ids = deleteConfirmTarget.ids;
         const dbIds = ids.filter((id) => !String(id).startsWith("new-"));
+
+        // Optimistic UI update (soft delete)
+        setContacts((prev) => prev.filter((c) => !ids.includes(c.id)));
+        setSelectedIds([]);
+        toast.success(`Deleted ${ids.length} contacts`);
 
         if (dbIds.length > 0) {
           try {
@@ -348,10 +354,6 @@ export default function AudienceDetailPage() {
             console.warn("API batch delete failed but continuing locally", e);
           }
         }
-
-        setContacts(contacts.filter((c) => !ids.includes(c.id)));
-        setSelectedIds([]);
-        toast.success(`Deleted ${ids.length} contacts`);
       }
     } catch (_err: unknown) {
       const err = _err as Error;
