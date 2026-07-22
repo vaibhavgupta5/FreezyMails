@@ -1,20 +1,2 @@
 {
-  "crons": [
-    {
-      "path": "/api/workers/scheduled",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/workers/send",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/workers/imap",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/workers/health",
-      "schedule": "0 * * * *"
-    }
-  ]
 }

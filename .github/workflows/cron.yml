@@ -1,0 +1,31 @@
+name: Vercel Cron Bypass
+
+on:
+  schedule:
+    - cron: '*/8 * * * *' # Runs every 8 minutes (GitHub Actions minimum interval)
+  workflow_dispatch: # Allows you to manually trigger it
+
+jobs:
+  run-crons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Scheduled API
+        run: |
+          curl -s -f -X POST "${{ secrets.PRODUCTION_URL }}/api/workers/scheduled" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" || echo "Failed /api/workers/scheduled"
+          
+      - name: Trigger Send API
+        run: |
+          curl -s -f -X POST "${{ secrets.PRODUCTION_URL }}/api/workers/send" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" || echo "Failed /api/workers/send"
+
+      - name: Trigger IMAP API
+        run: |
+          curl -s -f -X POST "${{ secrets.PRODUCTION_URL }}/api/workers/imap" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" || echo "Failed /api/workers/imap"
+
+      - name: Trigger Health API (Only run at minute 0)
+        if: github.event.schedule == '0 * * * *'
+        run: |
+          curl -s -f -X GET "${{ secrets.PRODUCTION_URL }}/api/workers/health" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" || echo "Failed /api/workers/health"
