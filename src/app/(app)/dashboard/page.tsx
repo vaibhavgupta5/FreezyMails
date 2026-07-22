@@ -88,7 +88,7 @@ export default async function Dashboard() {
  
  const maxVolume = Math.max(...last7DaysData.map(d => d.count), 1);
 
- // 3. Active Campaigns
+ // --- ACTIVE CAMPAIGNS ---
  const activeCampaigns = campaigns
  .filter(c => c.status === "SENDING" || c.status === "SCHEDULED")
  .map(c => {
@@ -115,9 +115,9 @@ export default async function Dashboard() {
  for (const draft of drafts) {
  feedItems.push({
  type: "draft",
- title: `Draft: ${draft.name}`,
- subtitle: `${draft._count.recipients} recipients ready to send`,
- date: draft.updatedAt,
+ title: `Draft: ${draft.name || "Untitled"}`,
+ subtitle: `${draft._count?.recipients || 0} recipients ready to send`,
+ date: new Date(draft.updatedAt || new Date()),
  initial: "D",
  link: `/campaigns/${draft.id}`,
  });
@@ -127,16 +127,16 @@ export default async function Dashboard() {
  (r) => r.status === "FAILED" || r.status === "BOUNCED",
  );
  const recentFailed = failedRecipients.filter(
- (r) => r.createdAt > sevenDaysAgo,
+ (r) => (r.createdAt ? new Date(r.createdAt) > sevenDaysAgo : false),
  );
  for (const r of recentFailed) {
  feedItems.push({
  type: "fix",
- title: `Delivery Issue: ${r.email}`,
- subtitle: `${r.campaign.name} · ${r.failReason || "Bounced"}`,
- date: r.sentAt || r.createdAt,
- initial: r.email.charAt(0).toUpperCase(),
- link: `/campaigns/${r.campaign.id}`,
+ title: `Delivery Issue: ${r.email || "Unknown"}`,
+ subtitle: `${r.campaign?.name || "Unknown Campaign"} · ${r.failReason || "Bounced"}`,
+ date: new Date(r.sentAt || r.createdAt || new Date()),
+ initial: (r.email || "U").charAt(0).toUpperCase(),
+ link: `/campaigns/${r.campaign?.id || ""}`,
  });
  }
 
