@@ -38,7 +38,7 @@ type SentMailsListProps = {
   initialData: SentMailData[];
   totalItems: number;
   accounts: { id: string; label: string; fromEmail: string }[];
-  templates: { id: string; name: string; subject: string; body: string }[];
+  templates: { id: string; name: string; subject: string; body: string; variables?: unknown }[];
   currentPage: number;
   totalPages: number;
   currentDate?: string;
@@ -187,11 +187,13 @@ export default function SentMailsList({
                     <td className="px-4 py-3 font-medium text-text-primary">
                       {mail.email}
                     </td>
-                    <td className="px-4 py-3 text-text-primary truncate max-w-[200px]" title={mail.subject}>
-                      {mail.subject}
+                    <td className="px-4 py-3 text-text-primary truncate max-w-[200px]" title={mail.subject || "No Subject"}>
+                      <span className={!mail.subject ? "text-text-muted italic" : ""}>
+                        {mail.subject || "No Subject"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-text-muted">
-                      {mail.campaignName}
+                      {mail.campaignName || "Manual Send"}
                     </td>
                     <td className="px-4 py-3 text-text-muted">
                       {format(new Date(mail.sentAt), "MMM d, yyyy HH:mm")}

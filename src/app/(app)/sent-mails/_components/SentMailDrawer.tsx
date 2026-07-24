@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { X, Send, User, Calendar, FileText, Reply } from "lucide-react";
+import { renderTemplate } from "@/lib/template-parser";
 import {
   Drawer,
   DrawerContent,
@@ -26,7 +27,7 @@ type SentMailDrawerProps = {
   mail: SentMailData | null;
   onClose: () => void;
   accounts: { id: string; label: string; fromEmail: string }[];
-  templates: { id: string; name: string; subject: string; body: string }[];
+  templates: { id: string; name: string; subject: string; body: string; variables?: unknown }[];
 };
 
 export default function SentMailDrawer({
@@ -54,7 +55,7 @@ export default function SentMailDrawer({
         accountId:
           mail.accountId || (accounts.length > 0 ? accounts[0].id : ""),
         templateId: "custom",
-        subject: `Re: ${mail.subject}`,
+        subject: `Re: ${mail.subject || "No Subject"}`,
         body: "",
       });
     }
@@ -72,11 +73,42 @@ export default function SentMailDrawer({
     }
     const template = templates.find((t) => t.id === templateId);
     if (template) {
+      const templateFallbacks: Record<string, string> = {};
+      if (template.variables) {
+        let varsArr: unknown[] = [];
+        if (Array.isArray(template.variables)) {
+          varsArr = template.variables;
+        } else if (typeof template.variables === "string") {
+          try {
+            const parsed = JSON.parse(template.variables);
+            if (Array.isArray(parsed)) varsArr = parsed;
+          } catch (e) {}
+        }
+
+        varsArr.forEach((v) => {
+          if (typeof v === "object" && v !== null && "name" in v) {
+            const varObj = v as { name: string; fallback?: unknown };
+            if (varObj.fallback !== undefined && varObj.fallback !== null) {
+              const fallbackStr = String(varObj.fallback).trim();
+              if (
+                fallbackStr &&
+                fallbackStr !== "undefined" &&
+                fallbackStr !== "null"
+              ) {
+                templateFallbacks[varObj.name] = fallbackStr;
+              }
+            }
+          }
+        });
+      }
+
+      const dynamicData = { email: mail?.email || "" };
+
       setFollowUpData((prev) => ({
         ...prev,
         templateId,
-        subject: template.subject,
-        body: template.body,
+        subject: renderTemplate(template.subject, dynamicData, templateFallbacks),
+        body: renderTemplate(template.body, dynamicData, templateFallbacks),
       }));
     }
   };
@@ -146,44 +178,53 @@ export default function SentMailDrawer({
           <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Left: Original Mail Details */}
             <div className="flex-1 space-y-4 md:space-y-6">
-              <div className="bg-bg-subtle rounded-xl p-4 md:p-5 border border-border-subtle space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-text-muted text-xs uppercase tracking-wider font-semibold block mb-1">
+              <div className="skeu-card p-5 md:p-6 space-y-5">
+                <div className="flex items-center gap-3 border-b border-border-subtle pb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary-base/10 text-primary-base flex items-center justify-center shrink-0">
+                    <User size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-text-muted mb-0.5">
                       To
-                    </span>
-                    <div className="flex items-center gap-2 text-text-primary">
-                      <User size={14} className="text-text-muted" />
+                    </div>
+                    <div className="text-sm font-semibold text-text-primary truncate">
                       {mail?.email}
                     </div>
                   </div>
-                  <div>
-                    <span className="text-text-muted text-xs uppercase tracking-wider font-semibold block mb-1">
-                      Date Sent
-                    </span>
-                    <div className="flex items-center gap-2 text-text-primary">
-                      <Calendar size={14} className="text-text-muted" />
-                      {mail?.sentAt && format(new Date(mail.sentAt), "PPP p")}
-                    </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-bg-subtle flex items-center justify-center text-text-muted shrink-0 border border-border-subtle">
+                       <Calendar size={14} />
+                     </div>
+                     <div className="min-w-0">
+                       <div className="text-[10px] uppercase tracking-wider font-bold text-text-muted mb-0.5">Date Sent</div>
+                       <div className="text-sm font-medium text-text-primary truncate">{mail?.sentAt && format(new Date(mail.sentAt), "PPP p")}</div>
+                     </div>
                   </div>
-                  <div className="sm:col-span-2">
-                    <span className="text-text-muted text-xs uppercase tracking-wider font-semibold block mb-1">
-                      Campaign
-                    </span>
-                    <div className="text-text-primary font-medium">
-                      {mail?.campaignName}
-                    </div>
+                  
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-bg-subtle flex items-center justify-center text-text-muted shrink-0 border border-border-subtle">
+                       <FileText size={14} />
+                     </div>
+                     <div className="min-w-0">
+                       <div className="text-[10px] uppercase tracking-wider font-bold text-text-muted mb-0.5">Campaign</div>
+                       <div className="text-sm font-medium text-text-primary truncate">{mail?.campaignName || "Manual Send"}</div>
+                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="font-semibold text-text-primary text-base md:text-lg border-b border-border-subtle pb-2">
-                  {mail?.subject}
-                </h3>
+              <div className="skeu-card p-0 overflow-hidden flex flex-col">
+                <div className="px-5 py-4 border-b border-border-subtle bg-bg-subtle/50">
+                  <h3 className={`font-semibold text-base md:text-lg ${!mail?.subject ? "text-text-muted italic" : "text-text-primary"}`}>
+                    {mail?.subject || "No Subject"}
+                  </h3>
+                </div>
                 <div
-                  className="prose prose-sm max-w-none bg-white text-black p-4 rounded-xl border border-border-subtle shadow-sm overflow-x-auto [&_*]:!text-black"
-                  dangerouslySetInnerHTML={{ __html: mail?.body || "" }}
+                  className="prose prose-sm max-w-none bg-white text-black p-5 md:p-6 overflow-x-auto [&_*]:!text-black min-h-[100px]"
+                  dangerouslySetInnerHTML={{ __html: mail?.body || "<span style='color: #94a3b8; font-style: italic;'>No content</span>" }}
                 />
               </div>
             </div>

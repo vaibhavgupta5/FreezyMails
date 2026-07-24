@@ -14,7 +14,7 @@ export default async function SentMailsPage({
 
   const resolvedParams = await searchParams;
   const page = parseInt(resolvedParams.page || "1");
-  const limit = 50;
+  const limit = 25;
   const skip = (page - 1) * limit;
   const dateStr = resolvedParams.date;
 
@@ -95,7 +95,7 @@ export default async function SentMailsPage({
   // Fetch templates for follow-up
   const templates = await prisma.template.findMany({
     where: { userId: user.id },
-    select: { id: true, name: true, subject: true, body: true },
+    select: { id: true, name: true, subject: true, body: true, variables: true },
   });
 
   return (

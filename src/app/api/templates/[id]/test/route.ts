@@ -24,9 +24,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
   const data: Record<string, string> = sampleData || {}
   
-  let templateFallbacks: Record<string, string> = {}
+  const templateFallbacks: Record<string, string> = {}
   if (template.variables) {
-    let varsArr: any[] = [];
+    let varsArr: unknown[] = [];
     if (Array.isArray(template.variables)) {
       varsArr = template.variables;
     } else if (typeof template.variables === 'string') {
@@ -52,8 +52,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   const renderedSubject = `[TEST] ${renderTemplate(template.subject, data, templateFallbacks)}`
   const renderedBody = renderTemplate(template.body, data, templateFallbacks)
 
+  const attachments = (template.attachments as { filename: string; content: string; encoding?: string }[]) || []
+
   try {
-    await sendEmail(account, testEmail, renderedSubject, renderedBody)
+    await sendEmail(account, testEmail, renderedSubject, renderedBody, undefined, attachments)
     return NextResponse.json({ success: true })
   } catch (err: unknown) {
     const error = err instanceof Error ? err.message : String(err)

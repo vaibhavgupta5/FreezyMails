@@ -593,14 +593,14 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
                 />
               </div>
               <div
-                className="whitespace-pre-wrap text-text-primary"
+                className="text-text-primary"
                 dangerouslySetInnerHTML={{
                   __html: bodyValue
                     ? bodyValue.replace(
                         /\{\{([^}]+)\}\}/g,
                         '<mark class="bg-bg-subtle text-primary-base font-bold px-1 rounded">$&</mark>',
                       )
-                    : '<span class="text-text-muted italic">No body content</span>',
+                    : '<span class="text-text-muted italic">No body</span>',
                 }}
               />
             </div>
