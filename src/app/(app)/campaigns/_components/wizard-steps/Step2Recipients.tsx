@@ -136,7 +136,11 @@ export default function Step2Recipients({
 
   const handleAddRow = () => {
     const rows = getTableRows();
-    rows.push({});
+    const newRow: Record<string, string> = {};
+    requiredHeaders.forEach((h) => {
+      newRow[h] = headerFallbacks[h] || "";
+    });
+    rows.push(newRow);
     const newText = rows
       .map((r) => requiredHeaders.map((h) => r[h] || "").join("\t"))
       .join("\n");
@@ -299,13 +303,13 @@ export default function Step2Recipients({
       (contact: { email?: string; customFields?: Record<string, string>; sentStatus?: string }) => {
         const values = requiredHeaders.map((h) => {
           const mappedListField = fieldMapping[h];
-          if (!mappedListField) return "";
+          if (!mappedListField) return headerFallbacks[h] || "";
 
           if (mappedListField.toLowerCase() === "email") {
-            return contact.email || "";
+            return contact.email || headerFallbacks[h] || "";
           }
 
-          return contact.customFields?.[mappedListField] || "";
+          return contact.customFields?.[mappedListField] || headerFallbacks[h] || "";
         });
         rows.push(values.join(delimiter));
       },
