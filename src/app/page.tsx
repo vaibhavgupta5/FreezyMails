@@ -155,7 +155,7 @@ export default async function LandingPage() {
           <ScrollReveal>
             <div className="text-center mb-16 md:mb-24">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 font-outfit drop-shadow-sm">
-                From URL list to{" "}
+                From MAIL list to{" "}
                 <u className="underline decoration-white decoration-4 underline-offset-4">
                   booked interview
                 </u>
@@ -171,14 +171,14 @@ export default async function LandingPage() {
             {[
               {
                 num: "01",
-                title: "Connect your accounts",
-                text: "Go to Accounts and connect 2-3 email addresses via SMTP/IMAP to spread sending volume across identities.",
+                title: "1-Click account connect",
+                text: "Go to Accounts and securely link 2-3 email addresses with a single click to effortlessly spread your sending volume across identities.",
                 align: "left",
               },
               {
                 num: "02",
-                title: "Skip the manual hunting",
-                text: "In Audience, paste a list of target URLs into the Web Extractor instead of building a CSV by hand. FreezyMails scrapes each site, prioritizes careers@ and founder emails, and enriches every row with company and person name.",
+                title: "Build your audience",
+                text: "Easily import your contacts via CSV or build your mailing list from scratch. As a bonus, use our built-in Web Extractor to automatically scrape and enrich emails directly from a list of target URLs.",
                 align: "right",
               },
               {
@@ -196,7 +196,7 @@ export default async function LandingPage() {
               {
                 num: "05",
                 title: "Choose your pace",
-                text: "Select your connected accounts, attach the enriched list, and pick Slow Drip to spread sends randomly across a 4-hour window instead of firing them all at once.",
+                text: "Select your connected accounts, pull in your enriched audience list with custom filtering conditions, and pick Slow Drip to spread sends randomly across a 4-hour window instead of firing them all at once.",
                 align: "left",
               },
               {
@@ -379,7 +379,7 @@ export default async function LandingPage() {
                     </h3>
                     <p className="text-text-muted leading-relaxed mb-8">
                       Bulk CSV import, dynamic custom fields, inline editing,
-                      and smart statuses. The parts of list management that
+                      smart statuses, and the ability to pull recipients into campaigns using custom filtering conditions. The parts of list management that
                       shouldn&apos;t need their own marketing section, but shouldn&apos;t
                       be missing either.
                     </p>

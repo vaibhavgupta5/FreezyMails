@@ -10,7 +10,9 @@ export async function MarketingHeader() {
   return (
     <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
       <nav className="pointer-events-auto bg-bg-base/80 backdrop-blur-xl border border-border-subtle shadow-lg shadow-black/5 rounded-lg px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-6 sm:gap-12 transition-all duration-300 w-full max-w-7xl mx-auto">
-        <Logo textColor="text-text-primary drop-shadow-sm" />
+        <Logo
+        href="/"
+        textColor="text-text-primary drop-shadow-sm" />
         <div className="flex items-center">
           <div className="hidden sm:flex items-center gap-6">
             <Link

@@ -78,9 +78,9 @@ export default function InteractiveExtractor() {
       {/* Header */}
       <div className="h-8 border-b border-border-subtle bg-bg-subtle flex items-center justify-between px-3 shrink-0">
         <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F]"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-danger-text"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-warning-text"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-success-text"></div>
         </div>
         <div className="text-text-muted flex items-center gap-2">
           <Terminal size={14} /> live_extractor.js
@@ -121,7 +121,7 @@ export default function InteractiveExtractor() {
         )}
 
         {error && (
-          <div className="flex items-start gap-2 text-[#F85149] mt-2 bg-[#F85149]/10 p-3 rounded border border-[#F85149]/20">
+          <div className="flex items-start gap-2 text-danger-text mt-2 bg-danger-text/10 p-3 rounded border border-danger-text/20">
             <AlertCircle size={14} className="shrink-0 mt-0.5" />
             <span className="leading-tight">{error}</span>
           </div>

@@ -26,7 +26,7 @@ export function Logo({
 }: LogoProps) {
   const content = (
     <div className={`flex items-center gap-2 ${className}`} onClick={onClick}>
-      {showIcon && <Snowflake className="text-primary-base shrink-0" size={iconSize} />}
+      {showIcon && <Snowflake className="text-primary-base shrink-0 hover:rotate-90 transition-all duration-500  " size={iconSize} />}
       {showText && (
         <span className={`${textSize} font-display font-medium ${textColor} truncate`}>
           freezy<span className={`font-bold ${highlightColor}`}>Mails</span>

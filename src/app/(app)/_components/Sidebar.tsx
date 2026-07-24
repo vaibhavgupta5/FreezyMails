@@ -93,6 +93,7 @@ export default function Sidebar({ user }: { user: User }) {
             className={`h-16 flex items-center border-b border-border-subtle ${isCollapsed ? "justify-center px-0" : "px-6"}`}
           >
             <Logo
+            href="/"
               showText={!isCollapsed}
               iconSize={24}
               textSize="text-xl"

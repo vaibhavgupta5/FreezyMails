@@ -65,13 +65,13 @@ export default function ABTestingVisual() {
         <div className="flex-1 bg-bg-base border-t-4 border-primary-base rounded-b-lg shadow-sm overflow-hidden flex flex-col">
           <div className="p-3 text-center border-b border-border-subtle">
             <div className="font-bold text-text-primary mb-1">Variant A (Direct)</div>
-            <div className="text-primary-base text-xs font-bold">12% Reply Rate</div>
+            <div className="text-primary-base text-xs font-bold">18% Reply Rate</div>
           </div>
           <div className="h-2 bg-bg-subtle w-full relative">
             <motion.div 
               className="absolute left-0 top-0 bottom-0 bg-primary-base" 
               initial={{ width: "0%" }}
-              animate={{ width: "12%" }}
+              animate={{ width: "28%" }}
               transition={{ duration: 1 }}
             />
           </div>
@@ -87,7 +87,7 @@ export default function ABTestingVisual() {
             <motion.div 
               className="absolute left-0 top-0 bottom-0 bg-border-subtle" 
               initial={{ width: "0%" }}
-              animate={{ width: "2%" }}
+              animate={{ width: "15%" }}
               transition={{ duration: 1 }}
             />
           </div>

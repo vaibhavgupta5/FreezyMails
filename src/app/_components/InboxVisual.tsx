@@ -32,7 +32,7 @@ export default function InboxVisual() {
         <div className="font-bold text-sm">Unified Inbox</div>
         <div className="flex gap-2">
           <span className="w-4 h-4 rounded-full bg-primary-base/20 border border-primary-base flex items-center justify-center text-[8px] font-bold text-primary-base">G</span>
-          <span className="w-4 h-4 rounded-full bg-blue-500/20 border border-blue-500 flex items-center justify-center text-[8px] font-bold text-blue-500">P</span>
+          <span className="w-4 h-4 rounded-full bg-primary-base/20 border border-primary-base flex items-center justify-center text-[8px] font-bold text-primary-base">P</span>
           <span className="w-4 h-4 rounded-full bg-success-text/20 border border-success-text flex items-center justify-center text-[8px] font-bold text-success-text">O</span>
         </div>
       </div>

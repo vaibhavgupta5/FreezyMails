@@ -140,7 +140,7 @@
   }
   
   .skeu-btn-ghost {
-    @apply bg-transparent text-text-primary rounded-md px-4 py-2 text-sm border border-border-subtle hover:bg-bg-subtle active:scale-[0.98] disabled:opacity-50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-base focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+    @apply bg-transparent text-text-primary rounded-md px-4 py-2 text-sm  hover:bg-bg-subtle active:scale-[0.98] disabled:opacity-50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-base focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
   }
   
   .skeu-btn-danger {

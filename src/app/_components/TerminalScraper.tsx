@@ -26,13 +26,13 @@ export default function TerminalScraper() {
   }, []);
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-bg-subtle rounded-xl border border-border-subtle shadow-2xl overflow-hidden font-mono text-sm relative">
+    <div className="w-full max-w-3xl mx-auto bg-bg-base rounded-xl border border-border-subtle shadow-2xl overflow-hidden font-mono text-sm relative">
       {/* Terminal Header */}
-      <div className="h-10 border-b border-border-subtle bg-bg-base flex items-center px-4 gap-4">
-        <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-danger-text"></div>
-          <div className="w-3 h-3 rounded-full bg-warning-text"></div>
-          <div className="w-3 h-3 rounded-full bg-success-text"></div>
+      <div className="h-10 border-b border-border-subtle bg-bg-subtle flex items-center px-4 gap-4">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-danger-text"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-warning-text"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-success-text"></div>
         </div>
         <div className="text-text-muted text-xs flex items-center gap-2">
           <Terminal size={14} /> web_extractor_worker.js
