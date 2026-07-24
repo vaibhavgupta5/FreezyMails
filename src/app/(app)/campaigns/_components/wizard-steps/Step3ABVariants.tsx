@@ -2,6 +2,13 @@ import { Trash2, Plus } from "lucide-react";
 import { useCampaignStore } from "@/stores/useCampaignStore";
 import { Button } from "@/components/ui/button";
 import { CampaignWizardTemplate } from "./Step1Details";
+import {
+  Attachment,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentContent,
+  AttachmentTitle,
+} from "@/components/ui/attachment";
 
 const equalizeSplits = (count: number) => {
   if (count === 0) return [];
@@ -149,23 +156,23 @@ export default function Step3ABVariants({
                 {selectedTemplate &&
                   Array.isArray(selectedTemplate.attachments) &&
                   selectedTemplate.attachments.length > 0 && (
-                    <div className="mb-6">
-                      <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-                        Attachments
-                      </label>
-                      <div className="flex flex-wrap gap-2 p-3 bg-bg-base border border-border-subtle rounded-xl">
-                        {selectedTemplate.attachments.map(
-                          (att, attIdx: number) => (
-                            <span
-                              key={attIdx}
-                              className="inline-flex items-center px-2.5 py-1 rounded bg-bg-subtle border border-border-subtle text-xs font-mono text-text-muted"
-                            >
-                              {att.filename}
-                            </span>
-                          ),
-                        )}
+                      <div className="mb-6">
+                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                          Attachments
+                        </label>
+                        <AttachmentGroup className="w-full">
+                          {selectedTemplate.attachments.map(
+                            (att, attIdx: number) => (
+                              <Attachment key={attIdx} size="xs" orientation="horizontal">
+                                <AttachmentMedia variant="icon" />
+                                <AttachmentContent>
+                                  <AttachmentTitle>{att.filename}</AttachmentTitle>
+                                </AttachmentContent>
+                              </Attachment>
+                            ),
+                          )}
+                        </AttachmentGroup>
                       </div>
-                    </div>
                   )}
 
                 <div className="bg-bg-base p-4 rounded-xl border border-border-subtle shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">

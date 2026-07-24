@@ -6,18 +6,18 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 import {
- LogOut,
- LayoutDashboard,
- Mail,
- FileText,
- Inbox,
- BarChart2,
- Settings,
- Server,
- ChevronLeft,
- ChevronRight,
- Users,
- Send,
+  LogOut,
+  LayoutDashboard,
+  Mail,
+  FileText,
+  Inbox,
+  BarChart2,
+  Settings,
+  Server,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Send,
 } from "lucide-react";
 import { createClientBrowser } from "@/lib/supabase-client";
 import { useInboxStore } from "@/stores/useInboxStore";
@@ -25,15 +25,15 @@ import { useLayoutStore } from "@/stores/useLayoutStore";
 import { Logo } from "@/components/ui/Logo";
 
 const navItems = [
- { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
- { href: "/campaigns", label: "Campaigns", icon: Mail },
- { href: "/inbox", label: "Inbox", icon: Inbox, disabled: true },
- { href: "/sent-mails", label: "Sent Mails", icon: Send },
- { href: "/audience", label: "Mailing Lists", icon: Users },
- { href: "/templates", label: "Templates", icon: FileText },
- { href: "/accounts", label: "Accounts", icon: Server },
- { href: "/analytics", label: "Analytics", icon: BarChart2, disabled: true },
- { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/campaigns", label: "Campaigns", icon: Mail },
+  { href: "/inbox", label: "Inbox", icon: Inbox, disabled: true },
+  { href: "/sent-mails", label: "Sent Mails", icon: Send },
+  { href: "/audience", label: "Mailing Lists", icon: Users },
+  { href: "/templates", label: "Templates", icon: FileText },
+  { href: "/accounts", label: "Accounts", icon: Server },
+  { href: "/analytics", label: "Analytics", icon: BarChart2, disabled: true },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 import { DashboardTour } from "./DashboardTour";
@@ -60,12 +60,15 @@ export default function Sidebar({ user }: { user: User }) {
 
   return (
     <>
-      <DashboardTour forceOpen={tourForceOpen} onCloseForce={() => setTourForceOpen(false)} />
+      <DashboardTour
+        forceOpen={tourForceOpen}
+        onCloseForce={() => setTourForceOpen(false)}
+      />
       {/* Mobile Backdrop */}
       {isMobileSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-primary-base/20 backdrop-blur-sm z-40 md:hidden transition-opacity" 
-          onClick={() => setMobileSidebar(false)} 
+        <div
+          className="fixed inset-0 bg-primary-base/20 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => setMobileSidebar(false)}
         />
       )}
 
@@ -117,14 +120,20 @@ export default function Sidebar({ user }: { user: User }) {
                       Soon
                     </span>
                   )}
-                  {!isCollapsed && item.href === "/inbox" && unreadCount > 0 && !item.disabled && (
-                    <span className="bg-primary-base text-white text-xs font-bold px-2 py-0.5 rounded-full -sm">
-                      {unreadCount}
-                    </span>
-                  )}
-                  {isCollapsed && item.href === "/inbox" && unreadCount > 0 && !item.disabled && (
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-primary-base rounded-full"></span>
-                  )}
+                  {!isCollapsed &&
+                    item.href === "/inbox" &&
+                    unreadCount > 0 &&
+                    !item.disabled && (
+                      <span className="bg-primary-base text-white text-xs font-bold px-2 py-0.5 rounded-full -sm">
+                        {unreadCount}
+                      </span>
+                    )}
+                  {isCollapsed &&
+                    item.href === "/inbox" &&
+                    unreadCount > 0 &&
+                    !item.disabled && (
+                      <span className="absolute top-2 right-2 w-2 h-2 bg-primary-base rounded-full"></span>
+                    )}
                 </>
               );
 
@@ -133,7 +142,9 @@ export default function Sidebar({ user }: { user: User }) {
                   <div
                     key={item.href}
                     className={`skeu-nav-item flex items-center justify-between opacity-50 cursor-not-allowed ${isCollapsed ? "justify-center px-0 py-3" : ""}`}
-                    title={isCollapsed ? `${item.label} (Coming Soon)` : undefined}
+                    title={
+                      isCollapsed ? `${item.label} (Coming Soon)` : undefined
+                    }
                   >
                     {content}
                   </div>
@@ -180,7 +191,9 @@ export default function Sidebar({ user }: { user: User }) {
               )}
             </div>
 
-            <div className={`flex ${isCollapsed ? "flex-col" : ""} gap-2 w-full`}>
+            <div
+              className={`flex ${isCollapsed ? "flex-col" : ""} gap-2 w-full`}
+            >
               <Button
                 variant="none"
                 onClick={handleSignOut}

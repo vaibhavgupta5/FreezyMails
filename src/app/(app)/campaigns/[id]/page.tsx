@@ -25,6 +25,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Attachment,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentContent,
+  AttachmentTitle,
+} from "@/components/ui/attachment";
 
 interface CampaignAttachment {
   filename: string;
@@ -728,18 +735,18 @@ export default function CampaignPage() {
                           <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">
                             Attachments
                           </span>
-                          <div className="flex flex-wrap gap-2 p-2.5 bg-bg-subtle/30 border border-border-subtle rounded-xl">
+                          <AttachmentGroup className="w-full">
                             {data.template.attachments.map(
                               (att: CampaignAttachment, attIdx: number) => (
-                                <span
-                                  key={attIdx}
-                                  className="inline-flex items-center px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-xs font-mono text-text-muted"
-                                >
-                                  {att.filename}
-                                </span>
+                                <Attachment key={attIdx} size="xs" orientation="horizontal">
+                                  <AttachmentMedia variant="icon" />
+                                  <AttachmentContent>
+                                    <AttachmentTitle>{att.filename}</AttachmentTitle>
+                                  </AttachmentContent>
+                                </Attachment>
                               ),
                             )}
-                          </div>
+                          </AttachmentGroup>
                         </div>
                       </>
                     )}

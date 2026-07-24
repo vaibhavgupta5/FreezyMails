@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { CommandMenu } from "./CommandMenu";
 
 function BreadcrumbItem({
   segment,
@@ -128,21 +129,24 @@ export default function Header() {
         })}
       </div>
 
-      {mounted && (
-        <Button
-          variant="none"
-          onClick={() => {
-            console.log("Current theme before click:", theme);
-            const nextTheme = theme === "dark" ? "light" : "dark";
-            console.log("Setting theme to:", nextTheme);
-            setTheme(nextTheme);
-          }}
-          className="p-2 rounded-full bg-bg-base hover:bg-bg-base text-text-muted hover:text-primary-base transition-colors border border-border-subtle cursor-pointer"
-          title="Toggle Theme"
-        >
-          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </Button>
-      )}
+      <div className="flex items-center">
+        <CommandMenu />
+        {mounted && (
+          <Button
+            variant="none"
+            onClick={() => {
+              console.log("Current theme before click:", theme);
+              const nextTheme = theme === "dark" ? "light" : "dark";
+              console.log("Setting theme to:", nextTheme);
+              setTheme(nextTheme);
+            }}
+            className="p-2 rounded-full bg-bg-base hover:bg-bg-base text-text-muted hover:text-primary-base transition-colors border border-border-subtle cursor-pointer ml-4 shrink-0"
+            title="Toggle Theme"
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </Button>
+        )}
+      </div>
     </header>
   );
 }

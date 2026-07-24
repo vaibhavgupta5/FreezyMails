@@ -10,8 +10,12 @@ const templateSchema = z.object({
   attachments: z.array(
     z.object({
       filename: z.string(),
-      content: z.string(),
+      content: z.string().refine(
+        (b64) => Buffer.byteLength(b64, "base64") <= 2 * 1024 * 1024,
+        { message: "Each attachment must be 2 MB or smaller" },
+      ),
       encoding: z.string().optional(),
+      size: z.number().optional(),
     })
   ).optional(),
   variables: z.array(

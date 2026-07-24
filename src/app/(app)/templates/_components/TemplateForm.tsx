@@ -6,10 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Sparkles, Variable } from "lucide-react";
+import { Sparkles, Variable, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Attachment,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentContent,
+  AttachmentTitle,
+  AttachmentDescription,
+  AttachmentActions,
+  AttachmentAction,
+} from "@/components/ui/attachment";
 import {
   Drawer,
   DrawerContent,
@@ -34,6 +44,7 @@ const templateSchema = z.object({
       z.object({
         filename: z.string(),
         content: z.string(),
+        size: z.number(),
       }),
     )
     .optional(),
@@ -44,6 +55,7 @@ type TemplateFormData = z.infer<typeof templateSchema>;
 type TemplateAttachment = {
   filename: string;
   content: string;
+  size: number;
 };
 
 type TemplateFormProps = {
@@ -110,9 +122,33 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
   const subjectValue = watch("subject") || "";
   const attachments = watch("attachments") || [];
 
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+  const ALLOWED_TYPES = [".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".csv", ".txt"];
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    e.target.value = "";
+
+    const invalidType = Array.from(files).filter(
+      (f) => !ALLOWED_TYPES.some((ext) => f.name.toLowerCase().endsWith(ext))
+    );
+    if (invalidType.length > 0) {
+      toast.error(`${invalidType.map((f) => f.name).join(", ")} ha${invalidType.length === 1 ? "s" : "ve"} an unsupported file type`);
+      return;
+    }
+
+    const oversized = Array.from(files).filter((f) => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast.error(`${oversized.map((f) => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 2 MB limit`);
+      return;
+    }
 
     const newAttachments = [...attachments];
     let processedCount = 0;
@@ -125,11 +161,12 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
         newAttachments.push({
           filename: file.name,
           content: base64String,
+          size: file.size,
         });
 
         processedCount++;
         if (processedCount === files.length) {
-          setValue("attachments", newAttachments, { shouldDirty: true });
+          setValue("attachments", newAttachments as TemplateAttachment[], { shouldDirty: true });
           toast.success(`Added ${files.length} attachment(s)`);
         }
       };
@@ -400,36 +437,48 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
             </label>
             <div className="flex flex-col gap-2">
               {attachments.length > 0 && (
-                <div className="flex flex-col gap-2 p-3 bg-bg-subtle border border-border-subtle rounded-lg">
-                  {attachments.map((att, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-2 bg-bg-base border border-border-subtle rounded-md text-sm"
-                    >
-                      <span
-                        className="font-mono text-xs truncate max-w-[200px]"
-                        title={att.filename}
-                      >
-                        {att.filename}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="none"
-                        onClick={() => removeAttachment(idx)}
-                        className="text-text-muted hover:text-danger-text p-1 cursor-pointer font-medium"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <AttachmentGroup className="w-full pb-2 border-b border-border-subtle mb-2">
+                    {attachments.map((att, idx) => {
+                      const a = att as { filename: string; content: string; size?: number };
+                      return (
+                        <Attachment key={idx} size="sm">
+                          <AttachmentMedia variant="icon" />
+                          <AttachmentContent>
+                            <AttachmentTitle>{a.filename}</AttachmentTitle>
+                            {a.size !== undefined && (
+                              <AttachmentDescription>
+                                {formatBytes(a.size)}
+                              </AttachmentDescription>
+                            )}
+                          </AttachmentContent>
+                          <AttachmentActions>
+                            <AttachmentAction onClick={() => removeAttachment(idx)}>
+                              <Trash2 />
+                            </AttachmentAction>
+                          </AttachmentActions>
+                        </Attachment>
+                      );
+                    })}
+                  </AttachmentGroup>
+                  {(() => {
+                    const totalBytes = attachments.reduce((sum, a) => sum + ((a as { size?: number }).size || 0), 0);
+                    return totalBytes > 8 * 1024 * 1024 ? (
+                      <p className="text-[11px] text-warning-text font-medium pt-1">
+                        Total size {formatBytes(totalBytes)} — some email providers may reject emails larger than 10 MB.
+                      </p>
+                    ) : null;
+                  })()}
+                </>
               )}
 
               <label className="skeu-btn-ghost text-xs py-2 text-center cursor-pointer border border-dashed border-border-subtle hover:border-text-muted rounded-md flex items-center justify-center gap-1.5 font-medium">
                 Add File Attachment
+                <span className="text-text-muted font-normal">· max 2 MB each</span>
                 <input
                   type="file"
                   multiple
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.csv,.txt"
                   className="hidden"
                   onChange={handleFileChange}
                 />
