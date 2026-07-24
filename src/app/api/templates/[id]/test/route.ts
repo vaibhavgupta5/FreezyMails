@@ -23,8 +23,21 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   if (!account) return NextResponse.json({ error: 'No active email account found. Connect an account first.' }, { status: 400 })
 
   const data: Record<string, string> = sampleData || {}
-  const renderedSubject = `[TEST] ${renderTemplate(template.subject, data)}`
-  const renderedBody = renderTemplate(template.body, data)
+  
+  let templateFallbacks: Record<string, string> = {}
+  if (template.variables && Array.isArray(template.variables)) {
+    template.variables.forEach(v => {
+      if (typeof v === 'object' && v !== null && 'name' in v && 'fallback' in v) {
+        const fallbackStr = String((v as any).fallback).trim();
+        if (fallbackStr) {
+          templateFallbacks[(v as any).name] = fallbackStr;
+        }
+      }
+    })
+  }
+
+  const renderedSubject = `[TEST] ${renderTemplate(template.subject, data, templateFallbacks)}`
+  const renderedBody = renderTemplate(template.body, data, templateFallbacks)
 
   try {
     await sendEmail(account, testEmail, renderedSubject, renderedBody)

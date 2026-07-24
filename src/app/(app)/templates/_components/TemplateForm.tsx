@@ -50,6 +50,7 @@ type TemplateFormProps = {
   initialData?: Omit<TemplateFormData, "attachments"> & {
     id: string;
     attachments?: unknown;
+    variables?: unknown;
   };
 };
 
@@ -57,6 +58,20 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [fallbacks, setFallbacks] = useState<Record<string, string>>(() => {
+    const initialVars = initialData?.variables;
+    const initialFallbacks: Record<string, string> = {};
+    if (Array.isArray(initialVars)) {
+      initialVars.forEach(v => {
+        if (typeof v === 'object' && v !== null && 'name' in v && 'fallback' in v) {
+          const varObj = v as { name: string; fallback: string };
+          initialFallbacks[varObj.name] = varObj.fallback;
+        }
+      });
+    }
+    return initialFallbacks;
+  });
 
   const [aiGenerating, setAiGenerating] = useState(false);
   const [showAiConfig, setShowAiConfig] = useState(false);
@@ -154,7 +169,7 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
       // We also need to extract variables to send to the backend
       const payload = {
         ...data,
-        variables,
+        variables: variables.map(v => ({ name: v, fallback: fallbacks[v] || "" })),
       };
 
       const res = await fetch(url, {
@@ -441,14 +456,22 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
                 No variables detected yet. Type {"{{variableName}}"} to add one.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-3">
                 {variables.map((v) => (
-                  <span
+                  <div
                     key={v}
-                    className="px-2 py-1 bg-bg-subtle border border-border-subtle rounded text-xs font-mono text-text-muted"
+                    className="flex flex-col gap-1.5 p-3 bg-bg-subtle border border-border-subtle rounded-md"
                   >
-                    {v}
-                  </span>
+                    <span className="text-xs font-mono font-medium text-text-primary">
+                      {v}
+                    </span>
+                    <Input
+                      placeholder="Default value (optional)"
+                      value={fallbacks[v] || ""}
+                      onChange={(e) => setFallbacks(prev => ({ ...prev, [v]: e.target.value }))}
+                      className="skeu-input text-sm h-8"
+                    />
+                  </div>
                 ))}
               </div>
             )}

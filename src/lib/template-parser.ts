@@ -1,7 +1,18 @@
-export function renderTemplate(body: string, data: Record<string, string>): string {
+export function renderTemplate(body: string, data: Record<string, string>, fallbacks: Record<string, string> = {}): string {
   return body.replace(/{{(.*?)}}/g, (match, key) => {
     const trimmedKey = key.trim();
-    return Object.prototype.hasOwnProperty.call(data, trimmedKey) ? data[trimmedKey] : match;
+    const val = data[trimmedKey];
+    
+    if (val !== undefined && val !== null && String(val).trim() !== "") {
+      return String(val);
+    }
+    
+    const fallbackVal = fallbacks[trimmedKey];
+    if (fallbackVal !== undefined && fallbackVal !== null && String(fallbackVal).trim() !== "") {
+      return String(fallbackVal);
+    }
+
+    return Object.prototype.hasOwnProperty.call(data, trimmedKey) ? String(data[trimmedKey]) : match;
   });
 }
 

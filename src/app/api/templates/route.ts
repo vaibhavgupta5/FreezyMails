@@ -14,6 +14,12 @@ const templateSchema = z.object({
       encoding: z.string().optional(),
     })
   ).optional(),
+  variables: z.array(
+    z.object({
+      name: z.string(),
+      fallback: z.string().optional()
+    })
+  ).optional(),
 })
 
 export async function GET() {
@@ -42,7 +48,15 @@ export async function POST(request: Request) {
     const bodyVars = Array.from(data.body.matchAll(varRegex)).map(m => m[1].trim())
     
     // Create an array of unique variables
-    const variables = Array.from(new Set([...subjectVars, ...bodyVars]))
+    const extractedVariables = Array.from(new Set([...subjectVars, ...bodyVars]))
+    
+    const variables = extractedVariables.map(v => {
+      const existing = data.variables?.find(ev => ev.name === v);
+      return {
+        name: v,
+        fallback: existing?.fallback || ""
+      }
+    });
 
     const template = await prisma.template.create({
       data: {

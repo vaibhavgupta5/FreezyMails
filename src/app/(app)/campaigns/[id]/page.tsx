@@ -97,6 +97,7 @@ export default function CampaignPage() {
   const [recipientsLoading, setRecipientsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -165,6 +166,7 @@ export default function CampaignPage() {
       | "resendAll"
       | "resendFailed",
   ) => {
+    setLoadingAction(action);
     try {
       if (action === "resendAll" || action === "resendFailed") {
         const type = action === "resendAll" ? "all" : "failed";
@@ -222,6 +224,8 @@ export default function CampaignPage() {
     } catch (_err: unknown) {
       const err = _err as Error;
       toast.error(err.message || "An error occurred");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -287,6 +291,7 @@ export default function CampaignPage() {
                 variant="ghost"
                 onClick={() => handleAction("pause")}
                 leftIcon={<Pause size={16} />}
+                isLoading={loadingAction === "pause"}
               >
                 Pause
               </Button>
@@ -300,6 +305,7 @@ export default function CampaignPage() {
                   handleAction(data.status === "PAUSED" ? "resume" : "send")
                 }
                 leftIcon={<Play size={16} />}
+                isLoading={loadingAction === "resume" || loadingAction === "send"}
               >
                 {data.status === "PAUSED"
                   ? "Resume"
@@ -316,6 +322,7 @@ export default function CampaignPage() {
                     onClick={() => handleAction("resendFailed")}
                     leftIcon={<RotateCcw size={16} />}
                     className="text-danger-text border-danger-text/20 hover:bg-danger-bg"
+                    isLoading={loadingAction === "resendFailed"}
                   >
                     Resend Failed ({progress?.failed})
                   </Button>
@@ -326,6 +333,7 @@ export default function CampaignPage() {
               variant="ghost"
               onClick={() => handleAction("resendAll")}
               leftIcon={<RotateCcw size={16} />}
+              isLoading={loadingAction === "resendAll"}
             >
               Restart
             </Button>

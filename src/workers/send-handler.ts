@@ -92,8 +92,22 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
 
       // Render template
       const dynamicData = recipient.dynamicData as Record<string, string> || {}
-      const renderedBody = renderTemplate(bodyTemplate, dynamicData)
-      const renderedSubject = renderTemplate(subject, dynamicData)
+      
+      const templateFallbacks: Record<string, string> = {}
+      if (campaign.template && Array.isArray(campaign.template.variables)) {
+        campaign.template.variables.forEach(v => {
+          if (typeof v === 'object' && v !== null && 'name' in v && 'fallback' in v) {
+            const varObj = v as { name: string; fallback: unknown };
+            const fallbackStr = String(varObj.fallback).trim();
+            if (fallbackStr) {
+              templateFallbacks[varObj.name] = fallbackStr;
+            }
+          }
+        })
+      }
+
+      const renderedBody = renderTemplate(bodyTemplate, dynamicData, templateFallbacks)
+      const renderedSubject = renderTemplate(subject, dynamicData, templateFallbacks)
       
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
       const unsubscribeUrl = `${appUrl}/api/unsubscribe/${recipient.id}`

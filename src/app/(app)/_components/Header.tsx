@@ -8,6 +8,69 @@ import { useLayoutStore } from "@/stores/useLayoutStore";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+function BreadcrumbItem({
+  segment,
+  previousSegment,
+  href,
+  isLast,
+}: {
+  segment: string;
+  previousSegment?: string;
+  href: string;
+  isLast: boolean;
+}) {
+  const [name, setName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const isUUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        segment,
+      );
+    if (!isUUID || !previousSegment) return;
+
+    let endpoint = "";
+    if (previousSegment === "campaigns") {
+      endpoint = `/api/campaigns/${segment}`;
+    } else if (previousSegment === "templates") {
+      endpoint = `/api/templates/${segment}`;
+    }
+
+    if (endpoint) {
+      fetch(endpoint)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.name) setName(data.name);
+        })
+        .catch(() => {});
+    }
+  }, [segment, previousSegment]);
+
+  const displayTitle =
+    name || segment.charAt(0).toUpperCase() + segment.slice(1);
+
+  return (
+    <div className="flex items-center shrink-0">
+      <ChevronRight size={16} className="mx-1 text-text-muted shrink-0" />
+      {isLast ? (
+        <span
+          className="text-text-primary font-medium truncate max-w-[120px] sm:max-w-[200px]"
+          title={displayTitle}
+        >
+          {displayTitle.length > 25 ? displayTitle.substring(0, 25) + "..." : displayTitle}
+        </span>
+      ) : (
+        <Link
+          href={href}
+          className="hover:text-text-primary transition-colors truncate max-w-[100px] sm:max-w-[150px]"
+          title={displayTitle}
+        >
+          {displayTitle.length > 25 ? displayTitle.substring(0, 25) + "..." : displayTitle}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -51,30 +114,16 @@ export default function Header() {
         </Link>
         {segments.map((segment, index) => {
           const isLast = index === segments.length - 1;
-          const title = segment.charAt(0).toUpperCase() + segment.slice(1);
+          const prev = index > 0 ? segments[index - 1] : undefined;
+          const href = `/${segments.slice(0, index + 1).join("/")}`;
           return (
-            <div key={segment} className="flex items-center shrink-0">
-              <ChevronRight
-                size={16}
-                className="mx-1 text-text-muted shrink-0"
-              />
-              {isLast ? (
-                <span
-                  className="text-text-primary font-medium truncate max-w-[120px] sm:max-w-[200px]"
-                  title={title}
-                >
-                  {title.substring(0, 20)}
-                </span>
-              ) : (
-                <Link
-                  href={`/${segments.slice(0, index + 1).join("/")}`}
-                  className="hover:text-text-primary transition-colors truncate max-w-[100px] sm:max-w-[150px]"
-                  title={title}
-                >
-                  {title.substring(0, 20)}
-                </Link>
-              )}
-            </div>
+            <BreadcrumbItem
+              key={segment}
+              segment={segment}
+              previousSegment={prev}
+              isLast={isLast}
+              href={href}
+            />
           );
         })}
       </div>

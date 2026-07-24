@@ -148,5 +148,29 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(req: Request) {
+  const user = await getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const { ids } = await req.json()
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'Invalid or missing ids' }, { status: 400 })
+    }
+
+    await prisma.campaign.deleteMany({
+      where: {
+        id: { in: ids },
+        userId: user.id
+      }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (_err: unknown) {
+    const err = _err as Error
+    console.error('Bulk delete error:', err)
+    return NextResponse.json({ error: err.message || 'Failed to delete campaigns' }, { status: 500 })
+  }
+}
 
 export const dynamic = 'force-dynamic'

@@ -141,9 +141,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Only allow full updates for DRAFT campaigns for safety
-    if (campaign.status !== 'DRAFT') {
-      return NextResponse.json({ error: 'Only DRAFT campaigns can be fully edited' }, { status: 400 })
+    // Only allow full updates for DRAFT and DONE campaigns for safety
+    if (campaign.status !== 'DRAFT' && campaign.status !== 'DONE') {
+      return NextResponse.json({ error: 'Only DRAFT or DONE campaigns can be fully edited' }, { status: 400 })
     }
 
     const template = await prisma.template.findUnique({ where: { id: data.templateId, userId: user.id } })
@@ -212,12 +212,21 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         }
       }
 
-      // Delete all old recipients and recreate
+      // Get all existing non-pending recipients to avoid recreating them
+      const existingRecipients = await tx.recipient.findMany({
+        where: { campaignId: campaign.id, status: { not: 'PENDING' } },
+        select: { email: true }
+      });
+      const existingEmails = new Set(existingRecipients.map(r => r.email));
+
+      // Delete all old PENDING recipients and recreate
       await tx.recipient.deleteMany({
         where: { campaignId: campaign.id, status: 'PENDING' }
       })
 
-      const recipientData = data.recipients.map((row) => {
+      const recipientData = data.recipients
+        .filter(row => !existingEmails.has(String(row.email).trim().toLowerCase()))
+        .map((row) => {
         const { email, ...dynamicData } = row
         const recipientId = crypto.randomUUID();
         
@@ -248,6 +257,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       })
 
       return campaign
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     })
 
     return NextResponse.json({ id: updatedCampaign.id })
