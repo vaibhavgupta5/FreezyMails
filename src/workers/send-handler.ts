@@ -86,6 +86,11 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
           const template = campaign.template
           if (!template) throw new Error('Missing template')
           subject = template.subject
+        }
+        
+        if (!bodyTemplate) {
+          const template = campaign.template
+          if (!template) throw new Error('Missing template')
           bodyTemplate = template.body
         }
       }
@@ -94,13 +99,26 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       const dynamicData = recipient.dynamicData as Record<string, string> || {}
       
       const templateFallbacks: Record<string, string> = {}
-      if (campaign.template && Array.isArray(campaign.template.variables)) {
-        campaign.template.variables.forEach(v => {
-          if (typeof v === 'object' && v !== null && 'name' in v && 'fallback' in v) {
-            const varObj = v as { name: string; fallback: unknown };
-            const fallbackStr = String(varObj.fallback).trim();
-            if (fallbackStr) {
-              templateFallbacks[varObj.name] = fallbackStr;
+      if (campaign.template && campaign.template.variables) {
+        let varsArr: unknown[] = [];
+        if (Array.isArray(campaign.template.variables)) {
+          varsArr = campaign.template.variables;
+        } else if (typeof campaign.template.variables === 'string') {
+          try {
+            const parsed = JSON.parse(campaign.template.variables);
+            if (Array.isArray(parsed)) varsArr = parsed;
+          } catch (e) {}
+        }
+        
+        varsArr.forEach(v => {
+          if (typeof v === 'object' && v !== null && 'name' in v) {
+            const varObj = v as { name: string; fallback?: unknown };
+            // Allow checking for fallback even if it's undefined
+            if (varObj.fallback !== undefined && varObj.fallback !== null) {
+              const fallbackStr = String(varObj.fallback).trim();
+              if (fallbackStr && fallbackStr !== 'undefined' && fallbackStr !== 'null') {
+                templateFallbacks[varObj.name] = fallbackStr;
+              }
             }
           }
         })

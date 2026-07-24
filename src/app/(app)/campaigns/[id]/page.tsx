@@ -24,13 +24,14 @@ import PageSkeleton from "../../_components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Attachment,
   AttachmentGroup,
   AttachmentMedia,
   AttachmentContent,
   AttachmentTitle,
+  getFileIcon,
 } from "@/components/ui/attachment";
 
 interface CampaignAttachment {
@@ -95,15 +96,27 @@ export default function CampaignPage() {
   const id = params.id as string;
   const queryClient = useQueryClient();
 
+
   const { data, isLoading: loading } = useQuery<CampaignData>({
     queryKey: ["campaign", id],
     queryFn: () => fetch(`/api/campaigns/${id}`).then((r) => r.json()),
+    refetchInterval: (query) => {
+      const d = query.state.data as CampaignData | undefined;
+      return d?.status === "SENDING" ? 5000 : false;
+    },
   });
+
+  const isSending = data?.status === "SENDING";
 
   const { data: progress } = useQuery<CampaignProgress>({
     queryKey: ["campaign-progress", id],
     queryFn: () => fetch(`/api/campaigns/${id}/progress`).then((r) => r.json()),
-    refetchInterval: data?.status === "SENDING" ? 5000 : false,
+    refetchInterval: (query) => {
+      const p = query.state.data as CampaignProgress | undefined;
+      if (p && p.pending === 0) return false;
+      const campaignData = queryClient.getQueryData<CampaignData>(["campaign", id]);
+      return campaignData?.status === "SENDING" ? 3000 : false;
+    },
     enabled: !!data,
   });
 
@@ -738,8 +751,10 @@ export default function CampaignPage() {
                           <AttachmentGroup className="w-full">
                             {data.template.attachments.map(
                               (att: CampaignAttachment, attIdx: number) => (
-                                <Attachment key={attIdx} size="xs" orientation="horizontal">
-                                  <AttachmentMedia variant="icon" />
+                                <Attachment key={attIdx} size="sm" orientation="horizontal">
+                                  <AttachmentMedia variant="icon">
+                                    {getFileIcon(att.filename)}
+                                  </AttachmentMedia>
                                   <AttachmentContent>
                                     <AttachmentTitle>{att.filename}</AttachmentTitle>
                                   </AttachmentContent>

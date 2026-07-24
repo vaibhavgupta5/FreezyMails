@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 const attachmentVariants = cva(
-  "group/attachment relative flex w-fit max-w-full min-w-0 shrink-0 flex-wrap rounded-xl border bg-card text-card-foreground transition-colors focus-within:ring-1 focus-within:ring-ring/50 has-[>a,>button]:hover:bg-muted/50 data-[state=error]:border-destructive/30 data-[state=idle]:border-dashed",
+  "group/attachment relative flex w-fit max-w-full min-w-0 shrink-0 flex-wrap rounded-xl border border-border-subtle bg-bg-subtle text-text-primary transition-colors focus-within:ring-1 focus-within:ring-primary-base/50 has-[>a,>button]:hover:bg-bg-base shadow-sm data-[state=error]:border-danger-border data-[state=idle]:border-dashed",
   {
     variants: {
       size: {
@@ -47,7 +47,7 @@ function Attachment({
 }
 
 const attachmentMediaVariants = cva(
-  "relative flex aspect-square w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-foreground group-data-[orientation=vertical]/attachment:w-full group-data-[size=sm]/attachment:w-8 group-data-[size=xs]/attachment:w-7 group-data-[size=xs]/attachment:rounded-md group-data-[state=error]/attachment:bg-destructive/10 group-data-[state=error]/attachment:text-destructive group-data-[orientation=vertical]/attachment:*:data-[slot=spinner]:size-6! [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6 group-data-[size=xs]/attachment:[&_svg:not([class*='size-'])]:size-3.5",
+  "relative flex aspect-square w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-bg-base text-text-primary border border-border-subtle shadow-skeu-inset group-data-[orientation=vertical]/attachment:w-full group-data-[size=sm]/attachment:w-8 group-data-[size=xs]/attachment:w-7 group-data-[size=xs]/attachment:rounded-md group-data-[state=error]/attachment:bg-danger-bg group-data-[state=error]/attachment:text-danger-text group-data-[orientation=vertical]/attachment:*:data-[slot=spinner]:size-6! [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6 group-data-[size=xs]/attachment:[&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       variant: {
@@ -117,7 +117,7 @@ function AttachmentDescription({
     <span
       data-slot="attachment-description"
       className={cn(
-        "mt-0.5 block min-w-0 truncate text-xs text-muted-foreground group-data-[state=error]/attachment:text-destructive/80",
+        "mt-0.5 block min-w-0 truncate text-xs text-text-muted group-data-[state=error]/attachment:text-danger-text",
         "max-w-full",
         className
       )}
@@ -193,6 +193,52 @@ function AttachmentGroup({ className, ...props }: React.ComponentProps<"div">) {
     />
   )
 }
+
+import { FileText, FileImage, File, FileSpreadsheet, FileArchive, FileAudio, FileVideo, FileCode } from "lucide-react";
+
+export const getFileIcon = (filename: string) => {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "pdf":
+      return <FileText className="size-4 text-red-500/80" />;
+    case "doc":
+    case "docx":
+    case "txt":
+      return <FileText className="size-4 text-blue-500/80" />;
+    case "csv":
+    case "xls":
+    case "xlsx":
+      return <FileSpreadsheet className="size-4 text-emerald-500/80" />;
+    case "png":
+    case "jpg":
+    case "jpeg":
+    case "gif":
+    case "svg":
+      return <FileImage className="size-4 text-purple-500/80" />;
+    case "zip":
+    case "rar":
+    case "7z":
+    case "tar":
+    case "gz":
+      return <FileArchive className="size-4 text-yellow-500/80" />;
+    case "mp3":
+    case "wav":
+    case "ogg":
+      return <FileAudio className="size-4 text-pink-500/80" />;
+    case "mp4":
+    case "avi":
+    case "mov":
+      return <FileVideo className="size-4 text-indigo-500/80" />;
+    case "js":
+    case "ts":
+    case "html":
+    case "css":
+    case "json":
+      return <FileCode className="size-4 text-gray-500/80" />;
+    default:
+      return <File className="size-4 text-text-muted" />;
+  }
+};
 
 export {
   Attachment,

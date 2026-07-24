@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Sparkles, Variable, Trash2 } from "lucide-react";
+import { Sparkles, Variable, Trash2, FileText, FileImage, File, FileSpreadsheet, FileArchive, FileAudio, FileVideo, FileCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,6 +64,50 @@ type TemplateFormProps = {
     attachments?: unknown;
     variables?: unknown;
   };
+};
+
+const getFileIcon = (filename: string) => {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "pdf":
+      return <FileText className="size-4 text-red-500/80" />;
+    case "doc":
+    case "docx":
+    case "txt":
+      return <FileText className="size-4 text-blue-500/80" />;
+    case "csv":
+    case "xls":
+    case "xlsx":
+      return <FileSpreadsheet className="size-4 text-emerald-500/80" />;
+    case "png":
+    case "jpg":
+    case "jpeg":
+    case "gif":
+    case "svg":
+      return <FileImage className="size-4 text-purple-500/80" />;
+    case "zip":
+    case "rar":
+    case "7z":
+    case "tar":
+    case "gz":
+      return <FileArchive className="size-4 text-yellow-500/80" />;
+    case "mp3":
+    case "wav":
+    case "ogg":
+      return <FileAudio className="size-4 text-pink-500/80" />;
+    case "mp4":
+    case "avi":
+    case "mov":
+      return <FileVideo className="size-4 text-indigo-500/80" />;
+    case "js":
+    case "ts":
+    case "html":
+    case "css":
+    case "json":
+      return <FileCode className="size-4 text-gray-500/80" />;
+    default:
+      return <File className="size-4 text-text-muted" />;
+  }
 };
 
 export default function TemplateForm({ initialData }: TemplateFormProps) {
@@ -132,11 +176,11 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!e.target.files || e.target.files.length === 0) return;
+    const fileArray = Array.from(e.target.files);
     e.target.value = "";
 
-    const invalidType = Array.from(files).filter(
+    const invalidType = fileArray.filter(
       (f) => !ALLOWED_TYPES.some((ext) => f.name.toLowerCase().endsWith(ext))
     );
     if (invalidType.length > 0) {
@@ -144,7 +188,7 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
       return;
     }
 
-    const oversized = Array.from(files).filter((f) => f.size > MAX_FILE_SIZE);
+    const oversized = fileArray.filter((f) => f.size > MAX_FILE_SIZE);
     if (oversized.length > 0) {
       toast.error(`${oversized.map((f) => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 2 MB limit`);
       return;
@@ -153,7 +197,7 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
     const newAttachments = [...attachments];
     let processedCount = 0;
 
-    Array.from(files).forEach((file) => {
+    fileArray.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64String = (event.target?.result as string).split(",")[1];
@@ -165,9 +209,9 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
         });
 
         processedCount++;
-        if (processedCount === files.length) {
+        if (processedCount === fileArray.length) {
           setValue("attachments", newAttachments as TemplateAttachment[], { shouldDirty: true });
-          toast.success(`Added ${files.length} attachment(s)`);
+          toast.success(`Added ${fileArray.length} attachment(s)`);
         }
       };
       reader.onerror = () => {
@@ -443,7 +487,9 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
                       const a = att as { filename: string; content: string; size?: number };
                       return (
                         <Attachment key={idx} size="sm">
-                          <AttachmentMedia variant="icon" />
+                          <AttachmentMedia variant="icon">
+                            {getFileIcon(a.filename)}
+                          </AttachmentMedia>
                           <AttachmentContent>
                             <AttachmentTitle>{a.filename}</AttachmentTitle>
                             {a.size !== undefined && (

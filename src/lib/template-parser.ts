@@ -12,7 +12,7 @@ export function renderTemplate(body: string, data: Record<string, string>, fallb
       return String(fallbackVal);
     }
 
-    return Object.prototype.hasOwnProperty.call(data, trimmedKey) ? String(data[trimmedKey]) : match;
+    return match;
   });
 }
 

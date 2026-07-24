@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCampaignStore } from "@/stores/useCampaignStore";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ export default function Step4Sequence({
 
         <div className="mb-6 p-4 rounded-xl border border-border-subtle bg-bg-subtle/50">
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <Sparkles size={16} className="text-primary-base" /> AI Sequence Writer
+            AI Sequence Writer
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
             <div>
@@ -148,7 +148,9 @@ export default function Step4Sequence({
 
         {sequenceSteps.length === 0 ? (
           <div className="p-8 text-center border border-dashed border-border-subtle rounded-xl text-text-muted bg-bg-subtle/50">
-            <p className="font-semibold text-text-primary mb-1">No follow-ups.</p>
+            <p className="font-semibold text-text-primary mb-1">
+              No follow-ups.
+            </p>
             <p className="text-sm">{"We'll just send the initial email."}</p>
           </div>
         ) : (
@@ -185,7 +187,9 @@ export default function Step4Sequence({
                         setSequenceSteps(newSteps);
                       }}
                     />
-                    <span className="text-sm font-semibold">days, then send:</span>
+                    <span className="text-sm font-semibold">
+                      days, then send:
+                    </span>
                   </div>
                 </div>
 

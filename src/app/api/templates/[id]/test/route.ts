@@ -25,12 +25,25 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   const data: Record<string, string> = sampleData || {}
   
   let templateFallbacks: Record<string, string> = {}
-  if (template.variables && Array.isArray(template.variables)) {
-    template.variables.forEach(v => {
-      if (typeof v === 'object' && v !== null && 'name' in v && 'fallback' in v) {
-        const fallbackStr = String((v as any).fallback).trim();
-        if (fallbackStr) {
-          templateFallbacks[(v as any).name] = fallbackStr;
+  if (template.variables) {
+    let varsArr: any[] = [];
+    if (Array.isArray(template.variables)) {
+      varsArr = template.variables;
+    } else if (typeof template.variables === 'string') {
+      try {
+        const parsed = JSON.parse(template.variables);
+        if (Array.isArray(parsed)) varsArr = parsed;
+      } catch (e) {}
+    }
+
+    varsArr.forEach(v => {
+      if (typeof v === 'object' && v !== null && 'name' in v) {
+        const varObj = v as { name: string; fallback?: unknown };
+        if (varObj.fallback !== undefined && varObj.fallback !== null) {
+          const fallbackStr = String(varObj.fallback).trim();
+          if (fallbackStr && fallbackStr !== 'undefined' && fallbackStr !== 'null') {
+            templateFallbacks[varObj.name] = fallbackStr;
+          }
         }
       }
     })

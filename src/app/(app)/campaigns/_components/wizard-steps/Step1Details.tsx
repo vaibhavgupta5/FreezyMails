@@ -126,22 +126,24 @@ export default function Step1Details({
           <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant="none"
+                variant="outline"
                 role="combobox"
                 aria-expanded={templateOpen}
-                className="w-full justify-between border border-border-subtle bg-bg-base hover:bg-bg-subtle font-normal px-3 py-2 h-10"
+                className="skeu-input w-full flex justify-between items-center px-4 font-normal"
               >
-                {templateId && templateId !== "none"
-                  ? templates.find((t) => t.id === templateId)?.name || "Select Template"
-                  : "Select Template"}
+                <span className="truncate">
+                  {templateId && templateId !== "none"
+                    ? templates.find((t) => t.id === templateId)?.name || "Select Template"
+                    : "Select Template"}
+                </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 border border-border-subtle bg-bg-base shadow-lg" align="start">
               <div className="flex items-center border-b border-border-subtle px-3">
                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                 <input
-                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-text-muted text-text-primary"
+                  className="flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-text-muted text-text-primary"
                   placeholder="Search templates..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -158,22 +160,26 @@ export default function Step1Details({
                         setDetails(name, t.id, accountIds);
                         setTemplateOpen(false);
                       }}
-                      className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-bg-subtle text-text-primary"
+                      className={`relative flex cursor-pointer select-none items-center justify-between rounded-md px-3 py-2.5 text-sm outline-none transition-colors ${
+                        templateId === t.id
+                          ? "bg-primary-base/10 text-primary-base font-medium"
+                          : "hover:bg-bg-subtle text-text-primary"
+                      }`}
                     >
-                      <Check
-                        className={`mr-2 h-4 w-4 ${templateId === t.id ? "opacity-100" : "opacity-0"}`}
-                      />
-                      {t.name}
+                      <span className="truncate pr-2">{t.name}</span>
+                      {templateId === t.id && (
+                        <Check className="h-4 w-4 shrink-0 text-primary-base" />
+                      )}
                     </div>
                   ))
                 )}
-                <div className="h-px bg-border-subtle my-1" />
+                <div className="h-px bg-border-subtle my-1 mx-2" />
                 <div
                   onClick={() => router.push("/templates/new")}
-                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm font-medium text-primary-base outline-none hover:bg-bg-subtle"
+                  className="relative flex cursor-pointer select-none items-center rounded-md px-3 py-2.5 text-sm font-medium text-primary-base outline-none hover:bg-primary-base/5"
                 >
-                  <span className="w-4 mr-2" />
-                  + Create new template
+                  <span className="text-lg leading-none mr-2">+</span>
+                  Create new template
                 </div>
               </div>
             </PopoverContent>
