@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -76,6 +76,14 @@ export default function Step2Recipients({
   const [importCondition, setImportCondition] = useState<"all" | "unsent" | "sent">("all");
   const [customFilters, setCustomFilters] = useState<FilterRule[]>([]);
   const [filterLogic, setFilterLogic] = useState<"AND" | "OR">("AND");
+  const [lastEdited, setLastEdited] = useState<{row: number, col: string} | null>(null);
+
+  useEffect(() => {
+    if (lastEdited) {
+      const t = setTimeout(() => setLastEdited(null), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [lastEdited]);
 
   const selectedTemplate = templates.find((t) => t.id === templateId);
   const requiredHeaders = ["email"];
@@ -123,6 +131,7 @@ export default function Step2Recipients({
       .map((r) => requiredHeaders.map((h) => r[h] || "").join("\t"))
       .join("\n");
     setRecipientsText(newText, templates);
+    setLastEdited({ row: rowIndex, col: header });
   };
 
   const handleAddRow = () => {
@@ -143,8 +152,10 @@ export default function Step2Recipients({
     setRecipientsText(newText, templates);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement> | File) => {
+    const file = 'target' in e ? e.target.files?.[0] : e;
     if (!file) return;
 
     Papa.parse(file, {
@@ -156,22 +167,36 @@ export default function Step2Recipients({
           return;
         }
 
-        const delimiter = "\t";
-        const rows = [requiredHeaders.join(delimiter)];
-
-        (results.data as Record<string, string>[]).forEach((row) => {
-          const values = requiredHeaders.map((h) => {
-            const matchedKey = Object.keys(row).find(
-              (k) => k.toLowerCase() === h.toLowerCase(),
-            );
-            return matchedKey ? row[matchedKey] : "";
-          });
-          rows.push(values.join(delimiter));
+        const rawRows = results.data as Record<string, string>[];
+        const extractedFields = Object.keys(rawRows[0] || {});
+        
+        const csvContacts = rawRows.map(row => {
+          const emailKey = Object.keys(row).find(k => k.toLowerCase() === 'email');
+          return {
+            email: emailKey ? row[emailKey] : undefined,
+            customFields: row,
+            sentStatus: "NOT_SENT"
+          };
         });
 
-        setRecipientsText(rows.join("\n"), templates);
-        toast.success(`Imported ${results.data.length} rows`);
-        setInputMode("table");
+        setFetchedContacts(csvContacts);
+        setAvailableListFields(extractedFields);
+
+        const initialMapping: Record<string, string> = {};
+        requiredHeaders.forEach((h) => {
+          const match = extractedFields.find(
+            (f) => f.toLowerCase() === h.toLowerCase(),
+          );
+          if (match) {
+            initialMapping[h] = match;
+          }
+        });
+        setFieldMapping(initialMapping);
+        setImportCondition("all");
+        setIsMappingDrawerOpen(true);
+        if ('target' in e) {
+          e.target.value = ''; // Reset input
+        }
       },
       error: (error) => {
         toast.error("Failed to parse CSV: " + error.message);
@@ -294,8 +319,24 @@ export default function Step2Recipients({
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="skeu-card relative">
+      <div 
+        className={`space-y-6 transition-colors ${isDragging ? "ring-2 ring-primary-base rounded-xl bg-primary-base/5" : ""}`}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+              handleFileUpload(file);
+            } else {
+              toast.error("Please drop a valid CSV file");
+            }
+          }
+        }}
+      >
+        <div className="skeu-card relative pointer-events-auto">
           <div className="flex flex-col xl:flex-row justify-between xl:items-start mb-6 gap-4">
             <div>
               <h2 className="text-lg font-semibold mb-2">Enter Recipients</h2>
@@ -406,11 +447,13 @@ export default function Step2Recipients({
                 <TableBody>
                   {getTableRows().map((row, i) => (
                     <TableRow key={i} className="hover:bg-bg-subtle">
-                      {requiredHeaders.map((h) => (
+                      {requiredHeaders.map((h) => {
+                        const isRecentlyEdited = lastEdited?.row === i && lastEdited?.col === h;
+                        return (
                         <TableCell key={h} className="p-2">
                           <input
                             type="text"
-                            className="w-full p-2 border border-transparent hover:border-border-subtle focus:border-primary-base rounded bg-transparent focus:bg-bg-base transition-colors text-sm placeholder:text-text-muted/60"
+                            className={`w-full p-2 border border-transparent hover:border-border-subtle focus:border-primary-base rounded transition-colors text-sm placeholder:text-text-muted/60 ${isRecentlyEdited ? 'bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-transparent focus:bg-bg-base'}`}
                             placeholder={
                               headerFallbacks[h]
                                 ? `Default: ${headerFallbacks[h]}`
@@ -422,7 +465,8 @@ export default function Step2Recipients({
                             }
                           />
                         </TableCell>
-                      ))}
+                        );
+                      })}
                       <TableCell className="p-2 text-center">
                         <Button
                           variant="none"

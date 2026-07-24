@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCampaignStore } from "@/stores/useCampaignStore";
 import { toast } from "sonner";
 import PageSkeleton from "../../_components/PageSkeleton";
 import type { EmailAccount } from "@prisma/client";
 import { CampaignWizardTemplate } from "./wizard-steps/Step1Details";
+import { useQuery } from "@tanstack/react-query";
 
 // Import Extracted Steps
 import Step1Details from "./wizard-steps/Step1Details";
@@ -37,26 +38,24 @@ export default function CampaignWizard({
     status,
   } = useCampaignStore();
 
-  const [templates, setTemplates] = useState<CampaignWizardTemplate[]>([]);
-  const [accounts, setAccounts] = useState<EmailAccount[]>([]);
-  const [audienceLists, setAudienceLists] = useState<
-    { id: string; name: string }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/templates").then((r) => r.json()),
-      fetch("/api/accounts").then((r) => r.json()),
-      fetch("/api/lists").then((r) => r.json()),
-    ]).then(([tData, aData, lData]) => {
-      setTemplates(tData || []);
-      setAccounts(aData || []);
-      setAudienceLists(Array.isArray(lData) ? lData : []);
-      setLoading(false);
-    });
-  }, []);
+  const { data: templates = [], isLoading: templatesLoading } = useQuery<CampaignWizardTemplate[]>({
+    queryKey: ["templates"],
+    queryFn: () => fetch("/api/templates").then((r) => r.json()),
+  });
+
+  const { data: accounts = [], isLoading: accountsLoading } = useQuery<EmailAccount[]>({
+    queryKey: ["accounts"],
+    queryFn: () => fetch("/api/accounts").then((r) => r.json()),
+  });
+
+  const { data: audienceLists = [], isLoading: listsLoading } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["lists"],
+    queryFn: () => fetch("/api/lists").then((r) => r.json()),
+  });
+
+  const loading = templatesLoading || accountsLoading || listsLoading;
 
   const handleSave = async () => {
     if (
@@ -172,7 +171,21 @@ export default function CampaignWizard({
         ].map((tab) => (
           <button
             key={tab.num}
-            onClick={() => setStep(tab.num)}
+            onClick={() => {
+              if (tab.num <= step) {
+                setStep(tab.num);
+                return;
+              }
+              if (tab.num > 1 && (!name || !templateId || !accountIds || accountIds.length === 0)) {
+                toast.error("Please complete the Details step first.");
+                return;
+              }
+              if (tab.num > 2 && !isValid) {
+                toast.error("Please provide valid Recipients first.");
+                return;
+              }
+              setStep(tab.num);
+            }}
             className={`flex-1 p-3 text-center border-b-2 font-medium transition-colors ${
               step === tab.num
                 ? "border-primary-base text-primary-base bg-bg-subtle"

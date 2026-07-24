@@ -33,6 +33,7 @@ interface CampaignDraftState {
   }[];
   scheduledAt: string | null;
   status?: string;
+  lastUpdated?: number;
 
   // Actions
   setStep: (step: number) => void;
@@ -350,7 +351,16 @@ export const useCampaignStore = create<CampaignDraftState>()(
         timezone: state.timezone,
         dailyLimit: state.dailyLimit,
         pacingType: state.pacingType,
+        lastUpdated: Date.now(),
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state && state.lastUpdated) {
+          const isExpired = Date.now() - state.lastUpdated > 5 * 60 * 1000;
+          if (isExpired && state.status !== 'DONE' && state.status !== 'ACTIVE') {
+            state.resetDraft();
+          }
+        }
+      },
     },
   ),
 );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Play,
@@ -24,6 +24,7 @@ import PageSkeleton from "../../_components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface CampaignAttachment {
   filename: string;
@@ -85,76 +86,39 @@ export default function CampaignPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const queryClient = useQueryClient();
 
-  const [data, setData] = useState<CampaignData | null>(null);
-  const [progress, setProgress] = useState<CampaignProgress | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { data, isLoading: loading } = useQuery<CampaignData>({
+    queryKey: ["campaign", id],
+    queryFn: () => fetch(`/api/campaigns/${id}`).then((r) => r.json()),
+  });
+
+  const { data: progress } = useQuery<CampaignProgress>({
+    queryKey: ["campaign-progress", id],
+    queryFn: () => fetch(`/api/campaigns/${id}/progress`).then((r) => r.json()),
+    refetchInterval: data?.status === "SENDING" ? 5000 : false,
+    enabled: !!data,
+  });
 
   // Recipients tracking
   const [showRecipients, setShowRecipients] = useState(false);
-  const [recipients, setRecipients] = useState<Recipient[]>([]);
-  const [recipientsLoading, setRecipientsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    const loadCampaign = async () => {
-      const res = await fetch(`/api/campaigns/${id}`);
-      const json = await res.json();
-      if (active) {
-        setData(json);
-        setLoading(false);
-      }
-    };
-    loadCampaign();
-    return () => {
-      active = false;
-    };
-  }, [id, refreshKey]);
+  const { data: recipients = [], isFetching: recipientsLoading, refetch: fetchRecipients } = useQuery<Recipient[]>({
+    queryKey: ["campaign-recipients", id],
+    queryFn: () => fetch(`/api/campaigns/${id}/recipients`).then((r) => r.json()),
+    enabled: showRecipients,
+  });
 
-  useEffect(() => {
-    if (!data) return;
+  const invalidateCampaign = () => {
+    queryClient.invalidateQueries({ queryKey: ["campaign", id] });
+    queryClient.invalidateQueries({ queryKey: ["campaign-progress", id] });
+  };
 
-    const fetchProgress = async () => {
-      const res = await fetch(`/api/campaigns/${id}/progress`);
-      const progData = await res.json();
-      setProgress(progData);
-
-      if (
-        (progData.status === "DONE" || progData.status === "PAUSED") &&
-        data.status === "SENDING"
-      ) {
-        setRefreshKey((prev) => prev + 1);
-      }
-    };
-
-    fetchProgress();
-
-    if (data.status === "SENDING") {
-      const intervalId = setInterval(fetchProgress, 5000);
-      return () => clearInterval(intervalId);
-    }
-  }, [data?.status, id]);
-
-  const handleToggleRecipients = async () => {
-    const nextShow = !showRecipients;
-    setShowRecipients(nextShow);
-    if (nextShow) {
-      setRecipientsLoading(true);
-      try {
-        const res = await fetch(`/api/campaigns/${id}/recipients`);
-        if (!res.ok) throw new Error("Failed to load recipients list");
-        const data = await res.json();
-        setRecipients(data || []);
-      } catch {
-        toast.error("Failed to load recipients list");
-      } finally {
-        setRecipientsLoading(false);
-      }
-    }
+  const handleToggleRecipients = () => {
+    setShowRecipients((prev) => !prev);
   };
 
   const handleAction = async (
@@ -187,7 +151,7 @@ export default function CampaignPage() {
         }
 
         toast.success(`Campaign resending to ${type}!`);
-        setRefreshKey((prev) => prev + 1);
+        invalidateCampaign();
         return;
       }
 
@@ -219,7 +183,7 @@ export default function CampaignPage() {
           send: "started",
         };
         toast.success(`Campaign ${actionMap[action]}!`);
-        setRefreshKey((prev) => prev + 1);
+        invalidateCampaign();
       }
     } catch (_err: unknown) {
       const err = _err as Error;

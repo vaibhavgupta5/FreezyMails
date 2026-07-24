@@ -3,12 +3,12 @@ import type { EmailAccount, Template } from "@prisma/client";
 import { useCampaignStore } from "@/stores/useCampaignStore";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { useState } from "react";
 
 interface TemplateAttachment {
   filename: string;
@@ -36,6 +36,13 @@ export default function Step1Details({
     setPacingType,
     setStep,
   } = useCampaignStore();
+
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredTemplates = templates.filter((t) =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="skeu-card space-y-4">
@@ -116,34 +123,61 @@ export default function Step1Details({
             </Button>
           </div>
         ) : (
-          <Select
-            value={templateId || "none"}
-            onValueChange={(val) => {
-              if (val === "create_new") {
-                router.push("/templates/new");
-                return;
-              }
-              setDetails(name, val === "none" ? "" : val, accountIds);
-            }}
-          >
-            <SelectTrigger className="skeu-select bg-bg-base">
-              <SelectValue placeholder="Select Template" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Select Template</SelectItem>
-              {templates.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
-                </SelectItem>
-              ))}
-              <SelectItem
-                value="create_new"
-                className="text-primary-base font-medium border-t mt-1 pt-1"
+          <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="none"
+                role="combobox"
+                aria-expanded={templateOpen}
+                className="w-full justify-between border border-border-subtle bg-bg-base hover:bg-bg-subtle font-normal px-3 py-2 h-10"
               >
-                + Create new template
-              </SelectItem>
-            </SelectContent>
-          </Select>
+                {templateId && templateId !== "none"
+                  ? templates.find((t) => t.id === templateId)?.name || "Select Template"
+                  : "Select Template"}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <div className="flex items-center border-b border-border-subtle px-3">
+                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <input
+                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-text-muted text-text-primary"
+                  placeholder="Search templates..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="max-h-[300px] overflow-y-auto p-1">
+                {filteredTemplates.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-text-muted">No template found.</div>
+                ) : (
+                  filteredTemplates.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => {
+                        setDetails(name, t.id, accountIds);
+                        setTemplateOpen(false);
+                      }}
+                      className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-bg-subtle text-text-primary"
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${templateId === t.id ? "opacity-100" : "opacity-0"}`}
+                      />
+                      {t.name}
+                    </div>
+                  ))
+                )}
+                <div className="h-px bg-border-subtle my-1" />
+                <div
+                  onClick={() => router.push("/templates/new")}
+                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm font-medium text-primary-base outline-none hover:bg-bg-subtle"
+                >
+                  <span className="w-4 mr-2" />
+                  + Create new template
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 

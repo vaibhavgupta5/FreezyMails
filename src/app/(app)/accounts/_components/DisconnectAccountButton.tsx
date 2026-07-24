@@ -5,31 +5,28 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Unplug } from "lucide-react";
 import ConfirmPopup from "@/components/ui/ConfirmPopup";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function DisconnectAccountButton({ accountId }: { accountId: string }) {
  const router = useRouter();
+ const queryClient = useQueryClient();
  const [isOpen, setIsOpen] = useState(false);
- const [isDisconnecting, setIsDisconnecting] = useState(false);
 
- const handleDisconnect = async () => {
- setIsDisconnecting(true);
- try {
- const res = await fetch(`/api/accounts/${accountId}`, {
- method: "DELETE",
+ const { mutate: handleDisconnect, isPending: isDisconnecting } = useMutation({
+  mutationFn: () => fetch(`/api/accounts/${accountId}`, { method: "DELETE" }).then(async r => {
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to disconnect account");
+    }
+  }),
+  onSuccess: () => {
+    toast.success("Account disconnected successfully");
+    setIsOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    router.refresh();
+  },
+  onError: (err: Error) => toast.error(err.message || "Failed to disconnect"),
  });
- if (!res.ok) {
- const data = await res.json().catch(() => ({}));
- throw new Error(data.error || "Failed to disconnect account");
- }
- toast.success("Account disconnected successfully");
- setIsOpen(false);
- router.refresh();
- } catch (err: unknown) {
- toast.error(err instanceof Error ? err.message : "Failed to disconnect");
- } finally {
- setIsDisconnecting(false);
- }
- };
 
  return (
  <>
