@@ -7,6 +7,7 @@ import {
   Type,
   Table as TableIcon,
   Upload,
+  X,
 } from "lucide-react";
 import Papa from "papaparse";
 import { toast } from "sonner";
@@ -37,6 +38,13 @@ import {
 } from "@/components/ui/select";
 import { CampaignWizardTemplate } from "./Step1Details";
 
+type FilterRule = {
+  id: string;
+  field: string;
+  operator: "is" | "is_not" | "contains" | "not_contains" | "is_empty" | "is_not_empty";
+  value: string;
+};
+
 export default function Step2Recipients({
   templates,
   audienceLists,
@@ -66,6 +74,8 @@ export default function Step2Recipients({
   const [availableListFields, setAvailableListFields] = useState<string[]>([]);
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({});
   const [importCondition, setImportCondition] = useState<"all" | "unsent" | "sent">("all");
+  const [customFilters, setCustomFilters] = useState<FilterRule[]>([]);
+  const [filterLogic, setFilterLogic] = useState<"AND" | "OR">("AND");
 
   const selectedTemplate = templates.find((t) => t.id === templateId);
   const requiredHeaders = ["email"];
@@ -221,15 +231,44 @@ export default function Step2Recipients({
     }
   };
 
+  const evaluateContact = (contact: { email?: string; customFields?: Record<string, string>; sentStatus?: string }) => {
+    if (importCondition === "unsent" && contact.sentStatus !== "NOT_SENT") return false;
+    if (importCondition === "sent" && contact.sentStatus !== "SENT") return false;
+
+    if (customFilters.length === 0) return true;
+
+    const results = customFilters.map((filter) => {
+      let contactValue = "";
+      if (filter.field.toLowerCase() === "email") {
+        contactValue = contact.email || "";
+      } else if (filter.field === "sentStatus") {
+        contactValue = contact.sentStatus || "";
+      } else {
+        contactValue = contact.customFields?.[filter.field] || "";
+      }
+      
+      const v1 = contactValue.toLowerCase();
+      const v2 = filter.value.toLowerCase();
+
+      switch (filter.operator) {
+        case "is": return v1 === v2;
+        case "is_not": return v1 !== v2;
+        case "contains": return v1.includes(v2);
+        case "not_contains": return !v1.includes(v2);
+        case "is_empty": return v1.trim() === "";
+        case "is_not_empty": return v1.trim() !== "";
+        default: return true;
+      }
+    });
+
+    return filterLogic === "AND" ? results.every((r) => r) : results.some((r) => r);
+  };
+
   const confirmListImport = () => {
     const delimiter = "\t";
     const rows = [requiredHeaders.join(delimiter)];
 
-    const contactsToImport = fetchedContacts.filter((c) => {
-      if (importCondition === "unsent") return c.sentStatus === "NOT_SENT";
-      if (importCondition === "sent") return c.sentStatus === "SENT";
-      return true;
-    });
+    const contactsToImport = fetchedContacts.filter(evaluateContact);
 
     contactsToImport.forEach(
       (contact: { email?: string; customFields?: Record<string, string>; sentStatus?: string }) => {
@@ -524,7 +563,11 @@ export default function Step2Recipients({
         onOpenChange={setIsMappingDrawerOpen}
         direction="right"
       >
-        <DrawerContent className="inset-y-0 right-0 h-full w-full sm:max-w-md rounded-none sm:rounded-l-xl border-l border-border-subtle bg-bg-base p-6 shadow-2xl flex flex-col overflow-hidden text-text-primary mt-0 top-0 left-auto bottom-0">
+        <DrawerContent 
+          className="inset-y-0 right-0 h-full w-full sm:max-w-md rounded-none border-l border-border-subtle bg-bg-base p-6 shadow-2xl flex flex-col overflow-hidden text-text-primary mt-0 top-0 left-auto bottom-0"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DrawerHeader className="px-0 pt-0 pb-4 border-b border-border-subtle flex flex-col gap-1 text-left shrink-0">
             <DrawerTitle className="text-lg font-semibold text-text-primary">
               Map Audience Fields
@@ -558,6 +601,78 @@ export default function Step2Recipients({
                       <SelectItem value="sent">Only Sent Contacts ({fetchedContacts.filter((c) => c.sentStatus === "SENT").length})</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <hr className="border-border-subtle" />
+                <div className="space-y-4 px-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-text-primary">Advanced Filters</h3>
+                    <Button variant="none" size="sm" onClick={() => setCustomFilters([...customFilters, { id: Math.random().toString(), field: "email", operator: "is", value: "" }])} className="text-xs text-primary-base hover:opacity-80 flex items-center gap-1 px-2 py-1"><Plus size={14} /> Add Filter</Button>
+                  </div>
+                  {customFilters.length > 0 && (
+                    <div className="space-y-3">
+                      {customFilters.map((filter, index) => (
+                        <div key={filter.id} className="flex flex-col gap-2 p-3 border border-border-subtle rounded bg-bg-base">
+                          <div className="flex items-center gap-2">
+                            <Select value={filter.field} onValueChange={(val) => {
+                              const newFilters = [...customFilters];
+                              newFilters[index].field = val;
+                              setCustomFilters(newFilters);
+                            }}>
+                              <SelectTrigger className="flex-1 bg-bg-base text-xs h-8"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="email">email</SelectItem>
+                                <SelectItem value="sentStatus">sentStatus</SelectItem>
+                                {availableListFields.filter(f => f.toLowerCase() !== "email").map(f => (
+                                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select value={filter.operator} onValueChange={(val: "is" | "is_not" | "contains" | "not_contains" | "is_empty" | "is_not_empty") => {
+                              const newFilters = [...customFilters];
+                              newFilters[index].operator = val;
+                              setCustomFilters(newFilters);
+                            }}>
+                              <SelectTrigger className="w-[110px] bg-bg-base text-xs h-8"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="is">is</SelectItem>
+                                <SelectItem value="is_not">is not</SelectItem>
+                                <SelectItem value="contains">contains</SelectItem>
+                                <SelectItem value="not_contains">not contains</SelectItem>
+                                <SelectItem value="is_empty">is empty</SelectItem>
+                                <SelectItem value="is_not_empty">is not empty</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-text-muted hover:text-danger-text shrink-0" onClick={() => setCustomFilters(customFilters.filter((_, i) => i !== index))}><X size={14} /></Button>
+                          </div>
+                          {filter.operator !== "is_empty" && filter.operator !== "is_not_empty" && (
+                            <input 
+                              type="text" 
+                              value={filter.value} 
+                              onChange={(e) => {
+                                const newFilters = [...customFilters];
+                                newFilters[index].value = e.target.value;
+                                setCustomFilters(newFilters);
+                              }}
+                              className="w-full text-xs p-1.5 border border-border-subtle rounded focus:border-primary-base focus:outline-none bg-bg-base text-text-primary placeholder:text-text-muted" 
+                              placeholder="Value..." 
+                            />
+                          )}
+                        </div>
+                      ))}
+                      {customFilters.length > 1 && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-text-muted">Match:</span>
+                          <Select value={filterLogic} onValueChange={(val: "AND" | "OR") => setFilterLogic(val)}>
+                            <SelectTrigger className="w-[80px] h-7 text-xs bg-bg-base"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="AND">ALL (AND)</SelectItem>
+                              <SelectItem value="OR">ANY (OR)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <hr className="border-border-subtle" />
                 <div className="space-y-4">
@@ -615,7 +730,7 @@ export default function Step2Recipients({
               onClick={confirmListImport}
               disabled={isFetchingList}
             >
-              Confirm Import ({fetchedContacts.filter((c) => importCondition === "all" ? true : importCondition === "unsent" ? c.sentStatus === "NOT_SENT" : c.sentStatus === "SENT").length} contacts)
+              Confirm Import ({fetchedContacts.filter(evaluateContact).length} contacts)
             </Button>
             <Button
               variant="ghost"
