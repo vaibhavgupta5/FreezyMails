@@ -67,12 +67,12 @@ graph TD
         State["State Management (Zustand & TanStack Query)"]
     end
 
-    subgraph API & Server Layer
+    subgraph API && Server Layer
         API["Next.js Route Handlers (/api/*)"]
         Auth["Supabase Auth (@supabase/ssr)"]
     end
 
-    subgraph Data & Queue Layer
+    subgraph Data && Queue Layer
         DB[("PostgreSQL Database")]
         Prisma["Prisma ORM 5.22"]
         Boss["pg-boss Async Queue"]

@@ -47,6 +47,22 @@ export async function GET(request: Request) {
     const fromEmail = profile.email
     const fromName = profile.name || profile.given_name || 'Google Account'
 
+    // Ensure User exists in Prisma database
+    await prisma.user.upsert({
+      where: { id: currentUser.id },
+      update: {
+        email: currentUser.email!,
+        name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
+        avatarUrl: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || null,
+      },
+      create: {
+        id: currentUser.id,
+        email: currentUser.email!,
+        name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
+        avatarUrl: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || null,
+      },
+    })
+
     // Save to database
     const existing = await prisma.emailAccount.findFirst({
       where: { userId: currentUser.id, fromEmail }
