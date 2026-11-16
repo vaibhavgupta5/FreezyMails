@@ -42,7 +42,7 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
         const hasReplied = recipient.mailEvents.some(e => e.type === MailEventType.REPLIED)
         if (hasReplied) {
           console.log(`Recipient ${recipient.email} already replied. Skipping follow-up.`)
-          return
+          continue
         }
       }
 
@@ -56,7 +56,7 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       })
       if (suppressed) {
         await prisma.recipient.update({ where: { id: recipient.id }, data: { status: 'FAILED', failReason: 'Unsubscribed' } })
-        return
+        continue
       }
 
       let subject = ''

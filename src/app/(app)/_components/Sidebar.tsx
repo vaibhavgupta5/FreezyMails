@@ -20,6 +20,7 @@ import {
   Send,
   Compass,
   ChevronLeft,
+  UserCog,
 } from "lucide-react";
 import { createClientBrowser } from "@/lib/supabase-client";
 import { useInboxStore } from "@/stores/useInboxStore";
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/accounts", label: "Accounts", icon: Server },
   { href: "/analytics", label: "Analytics", icon: BarChart2, disabled: false },
+  { href: "/setup", label: "Profile Setup", icon: UserCog },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

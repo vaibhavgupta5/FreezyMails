@@ -19,6 +19,92 @@ model User {
   templates        Template[]
   suppressions     Suppression[]
   mailingLists     MailingList[]
+  apiKeys          ApiKey[]
+  profile          Profile?
+}
+
+model Profile {
+  id                String            @id @default(uuid())
+  userId            String            @unique
+  headline          String?
+  location          String?
+  workAuth          String?
+  gradYear          Int?
+  salaryFloor       String?
+  roleTypes         String[]          @default([])
+  targetRoles       String[]          @default([])
+  links             Json              @default("{}")
+  excludedCompanies String[]          @default([])
+  excludedKeywords  String[]          @default([])
+  preferences       Json              @default("{}")
+  githubUsername    String?
+  setupCompletedAt  DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents         ProfileDocument[]
+  facts             ProfileFact[]
+  githubSnapshot    GithubSnapshot?
+}
+
+// kind: RESUME | COVER_LETTER | OTHER
+model ProfileDocument {
+  id            String        @id @default(uuid())
+  profileId     String
+  kind          String
+  name          String
+  mimeType      String
+  sizeBytes     Int
+  fileData      Bytes?
+  extractedText String        @default("")
+  isDefault     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  profile       Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  facts         ProfileFact[]
+
+  @@index([profileId])
+}
+
+// kind: SKILL | PROJECT | PR | EXPERIENCE | EDUCATION | METRIC | OTHER
+// status: PROPOSED | APPROVED | REJECTED
+model ProfileFact {
+  id          String           @id @default(uuid())
+  profileId   String
+  text        String
+  kind        String           @default("OTHER")
+  sourceUrl   String?
+  sourceDocId String?
+  status      String           @default("PROPOSED")
+  proposedBy  String           @default("app")
+  createdAt   DateTime         @default(now())
+  profile     Profile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  sourceDoc   ProfileDocument? @relation(fields: [sourceDocId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, status])
+}
+
+model GithubSnapshot {
+  id        String   @id @default(uuid())
+  profileId String   @unique
+  username  String
+  fetchedAt DateTime @default(now())
+  data      Json
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  keyPrefix  String
+  hashedKey  String    @unique
+  scopes     String[]  @default(["read"])
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model EmailAccount {

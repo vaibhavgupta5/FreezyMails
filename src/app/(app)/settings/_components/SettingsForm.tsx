@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { EmailAccount, User } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ApiKeysCard from "./ApiKeysCard";
 import {
   Select,
   SelectContent,
@@ -151,6 +152,8 @@ export default function SettingsForm({
           </Button>
         </div>
       </div>
+
+      <ApiKeysCard />
 
       <div className="skeu-card border-danger-text/20">
         <h2 className="text-xl font-semibold text-danger-text mb-4">

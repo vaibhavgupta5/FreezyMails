@@ -5,11 +5,14 @@ import { distributeJobs } from '@/lib/scheduling'
 
 // This endpoint is meant to be called by a cron job (e.g. Vercel Cron) every 5 minutes
 export async function POST(request: Request) {
-  // Optional: add basic auth or secret token check here
-  // const authHeader = request.headers.get('authorization');
-  // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return new Response('Unauthorized', { status: 401 });
-  // }
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    throw new Error('CRON_SECRET is not configured')
+  }
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     // Find campaigns that are SCHEDULED and their scheduledAt time has passed
