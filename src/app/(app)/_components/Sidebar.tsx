@@ -21,6 +21,10 @@ import {
   Compass,
   ChevronLeft,
   UserCog,
+  Briefcase,
+  Crosshair,
+  CheckCheck,
+  Bot,
 } from "lucide-react";
 import { createClientBrowser } from "@/lib/supabase-client";
 import { useInboxStore } from "@/stores/useInboxStore";
@@ -35,6 +39,10 @@ const navItems = [
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/accounts", label: "Accounts", icon: Server },
   { href: "/analytics", label: "Analytics", icon: BarChart2, disabled: false },
+  { href: "/sourcing", label: "Sourcing", icon: Crosshair },
+  { href: "/outreach", label: "Approvals", icon: CheckCheck },
+  { href: "/pipeline", label: "Pipeline", icon: Briefcase },
+  { href: "/agent", label: "Agent", icon: Bot },
   { href: "/setup", label: "Profile Setup", icon: UserCog },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

@@ -46,7 +46,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const protectedPaths = ['/dashboard', '/campaigns', '/templates', '/accounts', '/inbox', '/analytics', '/settings', '/setup']
+  const protectedPaths = ['/dashboard', '/campaigns', '/templates', '/accounts', '/inbox', '/analytics', '/settings', '/setup', '/sourcing', '/outreach', '/pipeline', '/agent']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
   if (!user && isProtectedPath) {

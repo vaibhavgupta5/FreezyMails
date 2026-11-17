@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import type { ApiKeyAuth } from '@/lib/api-auth'
 import { computeSetupStatus } from '@/lib/profile'
 import { registerSourcingTools } from '@/lib/mcp-sourcing'
+import { registerOutreachTools } from '@/lib/mcp-outreach'
 
 function result(data: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] }
@@ -25,6 +26,24 @@ const UNTRUSTED_NOTE =
 export function createFreezyMcpServer(auth: ApiKeyAuth) {
   const userId = auth.userId
   const server = new McpServer({ name: 'freezymails', version: '0.1.0' })
+
+  // Audit log: one row per tool call (name, truncated arguments, outcome). Never blocks or fails the call.
+  const registerOriginal = server.registerTool.bind(server)
+  server.registerTool = ((name: string, config: { inputSchema?: unknown }, cb: (...a: unknown[]) => Promise<{ isError?: boolean }>) =>
+    registerOriginal(name, config as never, (async (...args: unknown[]) => {
+      let isError = false
+      try {
+        const res = await cb(...args)
+        isError = Boolean(res?.isError)
+        return res
+      } catch (e) {
+        isError = true
+        throw e
+      } finally {
+        const summary = config.inputSchema ? JSON.stringify(args[0] ?? {}).slice(0, 300) : ''
+        prisma.auditLog.create({ data: { userId, keyId: auth.keyId, tool: name, summary, isError } }).catch(() => {})
+      }
+    }) as never)) as typeof server.registerTool
 
   server.registerTool(
     'list_email_accounts',
@@ -331,6 +350,7 @@ export function createFreezyMcpServer(auth: ApiKeyAuth) {
   )
 
   registerSourcingTools(server, userId, auth.scopes.includes('write'), { result, incomplete })
+  registerOutreachTools(server, userId, auth.scopes.includes('write'), { result, incomplete })
 
   if (auth.scopes.includes('write')) {
     server.registerTool(

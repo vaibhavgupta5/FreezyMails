@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { computeSetupStatus } from '@/lib/profile'
+import { getAgentState } from '@/lib/agent'
 import { parseBoardUrl, type AtsKind } from '@/lib/sourcing/ats'
 import { fetchHnHiring } from '@/lib/sourcing/hn'
 import { findPublishedContacts, hasMx, normalizeDomain } from '@/lib/sourcing/contacts'
@@ -21,7 +22,9 @@ const fail = (h: Helpers, message: string): Out => ({ ...h.result({ error: messa
 export function registerSourcingTools(server: McpServer, userId: string, canWrite: boolean, h: Helpers) {
   const needSetup = async (): Promise<Out | null> => {
     const st = await computeSetupStatus(userId)
-    return st.complete ? null : h.incomplete(st.missing)
+    if (!st.complete) return h.incomplete(st.missing)
+    if ((await getAgentState(userId)).paused) return fail(h, 'The agent is paused by the user (kill switch). Stop until they resume it on the Agent page.')
+    return null
   }
 
   server.registerTool(

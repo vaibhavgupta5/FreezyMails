@@ -21,6 +21,9 @@ model User {
   mailingLists     MailingList[]
   apiKeys          ApiKey[]
   profile          Profile?
+  outreach         Outreach[]
+  applications     Application[]
+  auditLogs        AuditLog[]
   companies        Company[]
   jobPostings      JobPosting[]
   clusters         Cluster[]
@@ -41,6 +44,7 @@ model Profile {
   excludedKeywords  String[]          @default([])
   preferences       Json              @default("{}")
   githubUsername    String?
+  agentPaused       Boolean           @default(false)
   setupCompletedAt  DateTime?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -357,18 +361,22 @@ model Contact {
 
 // Role cluster, e.g. "AI Engineer" or "SDE". Drives scoring, resume choice and later campaigns.
 model Cluster {
-  id              String       @id @default(uuid())
-  userId          String
-  name            String
-  titleKeywords   String[]     @default([])
-  excludeKeywords String[]     @default([])
-  resumeDocId     String?
-  notes           String?
-  isActive        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobs            JobPosting[]
+  id                    String        @id @default(uuid())
+  userId                String
+  name                  String
+  titleKeywords         String[]      @default([])
+  excludeKeywords       String[]      @default([])
+  resumeDocId           String?
+  notes                 String?
+  followUps             Json          @default("[]")
+  followUpsApprovedHash String?
+  isActive              Boolean       @default(true)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs                  JobPosting[]
+  outreach              Outreach[]
+  applications          Application[]
 
   @@unique([userId, name])
 }
@@ -390,6 +398,8 @@ model Company {
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobs         JobPosting[]
   contacts     CompanyContact[]
+  outreach     Outreach[]
+  applications Application[]
 
   @@unique([userId, key])
   @@index([userId])
@@ -397,7 +407,7 @@ model Company {
 
 // status: NEW | SHORTLISTED | DISMISSED
 model JobPosting {
-  id           String    @id @default(uuid())
+  id           String        @id @default(uuid())
   userId       String
   companyId    String
   clusterId    String?
@@ -405,20 +415,22 @@ model JobPosting {
   externalId   String
   title        String
   location     String?
-  isRemote     Boolean   @default(false)
+  isRemote     Boolean       @default(false)
   url          String
-  description  String    @default("")
+  description  String        @default("")
   applyEmail   String?
   postedAt     DateTime?
-  firstSeenAt  DateTime  @default(now())
-  lastSeenAt   DateTime  @default(now())
+  firstSeenAt  DateTime      @default(now())
+  lastSeenAt   DateTime      @default(now())
   closedAt     DateTime?
   score        Int?
-  scoreReasons Json      @default("[]")
-  status       String    @default("NEW")
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  cluster      Cluster?  @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  scoreReasons Json          @default("[]")
+  status       String        @default("NEW")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cluster      Cluster?      @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  outreach     Outreach[]
+  applications Application[]
 
   @@unique([userId, source, externalId])
   @@index([userId, status, score])
@@ -439,4 +451,90 @@ model CompanyContact {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, email])
+}
+
+// A cold email draft. Claude writes it; only the signed-in user can approve it.
+// status: DRAFT | APPROVED | QUEUED | SENT | FAILED | REJECTED
+model Outreach {
+  id          String      @id @default(uuid())
+  userId      String
+  companyId   String
+  jobId       String?
+  clusterId   String?
+  toEmail     String
+  toName      String?
+  subject     String
+  body        String
+  factIds     String[]    @default([])
+  sourceUrl   String?
+  status      String      @default("DRAFT")
+  campaignId  String?
+  recipientId String?
+  createdAt   DateTime    @default(now())
+  approvedAt  DateTime?
+  queuedAt    DateTime?
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  job         JobPosting? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  cluster     Cluster?    @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, toEmail])
+}
+
+// Where the user applied. Record only: FreezyMails never submits ATS forms.
+// channel: EMAIL | ATS | REFERRAL | OTHER
+// status: APPLIED | REPLIED | INTERVIEW | OFFER | REJECTED | GHOSTED | WITHDRAWN
+model Application {
+  id          String             @id @default(uuid())
+  userId      String
+  companyId   String
+  jobId       String?
+  clusterId   String?
+  outreachId  String?            @unique
+  channel     String
+  status      String             @default("APPLIED")
+  url         String?
+  roleTitle   String?
+  atsKind     String?
+  resumeDocId String?
+  verified    Boolean            @default(false)
+  evidence    String?
+  notes       String?
+  appliedAt   DateTime           @default(now())
+  followUpAt  DateTime?
+  lastEventAt DateTime           @default(now())
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  job         JobPosting?        @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  cluster     Cluster?           @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  events      ApplicationEvent[]
+
+  @@index([userId, status])
+  @@index([userId, companyId])
+}
+
+model ApplicationEvent {
+  id            String      @id @default(uuid())
+  applicationId String
+  type          String
+  note          String?
+  at            DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+// One row per MCP tool call.
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  keyId     String?
+  tool      String
+  summary   String
+  isError   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

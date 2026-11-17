@@ -23,7 +23,7 @@ Call `get_profile_bundle`. Work only from its content: approved facts, resume an
 1. **Weak or missing facts.** Resume claims with no metric, unclear dates, or no source. List them as questions to the user. Do not fill gaps yourself.
 2. **Resume ATS problems.** Check each resume's extracted text for dropped ligatures (words like `proling`, `oine`, `specic`), very short extracted text (scanned image), or multi-column garbling. Say exactly what is broken and how to fix it.
 3. **GitHub vs resume.** Compare the externally merged PR count and repos with what each resume claims. Flag any resume number that is higher than GitHub shows, and any strong GitHub work the resume omits.
-4. **Clusters.** From target roles and resumes, propose role clusters (for example AI Engineer, SDE/Backend), each with title keywords, which resume fits, and what to emphasise. These are proposals in chat; cluster storage arrives in a later phase.
+4. **Clusters.** From target roles and resumes, propose role clusters (for example AI Engineer, SDE/Backend), each with title keywords, which resume fits, and what to emphasise. These are proposals in chat; the user can then have you save them with `upsert_cluster` (see `fm-hunt`).
 5. **Voice.** From cover letters and writing samples, describe the user's tone in two or three lines for later drafting.
 6. **Exclusions.** Suggest companies or keywords to exclude, only with a stated reason.
 
