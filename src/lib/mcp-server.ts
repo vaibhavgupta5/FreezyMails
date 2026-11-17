@@ -3,6 +3,7 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import type { ApiKeyAuth } from '@/lib/api-auth'
 import { computeSetupStatus } from '@/lib/profile'
+import { registerSourcingTools } from '@/lib/mcp-sourcing'
 
 function result(data: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] }
@@ -328,6 +329,8 @@ export function createFreezyMcpServer(auth: ApiKeyAuth) {
       })
     },
   )
+
+  registerSourcingTools(server, userId, auth.scopes.includes('write'), { result, incomplete })
 
   if (auth.scopes.includes('write')) {
     server.registerTool(

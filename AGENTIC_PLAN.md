@@ -180,7 +180,7 @@ A **Cluster** is a role family with its own resume, cover letter, template, mail
 
 **Phase 2: profile and website setup (done).** Models in section 4, document upload with text extraction, GitHub snapshot, fact extraction and review, and the website setup wizard with a completion gate. Then `get_setup_status` and the `/fm-setup` enhancement skill, which only works once the website setup is done.
 
-**Phase 3: sourcing and clusters (3–4 days).** Company and JobPosting models, ATS board fetchers, HN and curated-list importers, contact finder on the existing extractor, MX validation, scoring, cluster assignment, daily sourcing worker. MCP tools: `search_jobs`, `score_job`, `assign_cluster`, `find_contacts`, `list_clusters`.
+**Phase 3: sourcing and clusters (done, except the daily worker and X/curated-list importers, which move to Phase 6).** Company and JobPosting models, ATS board fetchers, HN and curated-list importers, contact finder on the existing extractor, MX validation, scoring, cluster assignment, daily sourcing worker. MCP tools: `search_jobs`, `score_job`, `assign_cluster`, `find_contacts`, `list_clusters`.
 
 **Phase 4: email applications at scale (2–3 days).** `draft_application_email` (job + cluster + facts → subject and body, with a Gemini or Claude call), approval queue, auto-built draft campaigns per cluster, `approve_batch`, daily cap and randomized gaps enforced in the worker. Reply classification updates the `Application`. Follow-up sequence per cluster.
 

@@ -21,6 +21,9 @@ model User {
   mailingLists     MailingList[]
   apiKeys          ApiKey[]
   profile          Profile?
+  companies        Company[]
+  jobPostings      JobPosting[]
+  clusters         Cluster[]
 }
 
 model Profile {
@@ -350,4 +353,90 @@ model Contact {
 
   @@unique([mailingListId, email])
   @@index([mailingListId])
+}
+
+// Role cluster, e.g. "AI Engineer" or "SDE". Drives scoring, resume choice and later campaigns.
+model Cluster {
+  id              String       @id @default(uuid())
+  userId          String
+  name            String
+  titleKeywords   String[]     @default([])
+  excludeKeywords String[]     @default([])
+  resumeDocId     String?
+  notes           String?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs            JobPosting[]
+
+  @@unique([userId, name])
+}
+
+// key = "greenhouse:slug" | "lever:slug" | "ashby:slug" | "domain:example.com" | "name:acme"
+model Company {
+  id           String           @id @default(uuid())
+  userId       String
+  key          String
+  name         String
+  website      String?
+  domain       String?
+  atsKind      String?
+  atsSlug      String?
+  source       String           @default("manual")
+  notes        String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime         @default(now())
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs         JobPosting[]
+  contacts     CompanyContact[]
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+// status: NEW | SHORTLISTED | DISMISSED
+model JobPosting {
+  id           String    @id @default(uuid())
+  userId       String
+  companyId    String
+  clusterId    String?
+  source       String
+  externalId   String
+  title        String
+  location     String?
+  isRemote     Boolean   @default(false)
+  url          String
+  description  String    @default("")
+  applyEmail   String?
+  postedAt     DateTime?
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  closedAt     DateTime?
+  score        Int?
+  scoreReasons Json      @default("[]")
+  status       String    @default("NEW")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cluster      Cluster?  @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, source, externalId])
+  @@index([userId, status, score])
+  @@index([companyId])
+}
+
+// Candidate outreach addresses. Never emailed until the user approves (Phase 4).
+// kind: FOUNDER | HR | GENERIC | PERSON | LISTING. mxValid null = not checked.
+model CompanyContact {
+  id        String   @id @default(uuid())
+  companyId String
+  email     String
+  name      String?
+  kind      String   @default("GENERIC")
+  sourceUrl String?
+  mxValid   Boolean?
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, email])
 }

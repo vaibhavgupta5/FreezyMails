@@ -3,6 +3,7 @@ import { authenticateApiKey, bearerToken } from '@/lib/api-auth'
 import { createFreezyMcpServer } from '@/lib/mcp-server'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 function unauthorized() {
