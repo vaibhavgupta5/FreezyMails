@@ -25,6 +25,7 @@ export function assignStableBucket(
   if (options.length === 0) return null;
   if (options.length === 1) return options[0].id;
 
+  // A stable percentile keeps recipients assigned to the same variant across repeated evaluations.
   const percentile = hashToPercentile(hashInput);
   
   let cumulative = 0;
