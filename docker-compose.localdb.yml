@@ -1,0 +1,44 @@
+# Override: run against a local Postgres instead of the DATABASE_URL in .env.
+x-local-db: &local-db
+  DATABASE_URL: postgresql://freezy:freezy@db:5432/freezymails
+
+services:
+  web:
+    environment: *local-db
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  worker:
+    environment: *local-db
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: freezy
+      POSTGRES_PASSWORD: freezy
+      POSTGRES_DB: freezymails
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freezy -d freezymails"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      target: worker
+    command: ["npx", "prisma", "db", "push", "--skip-generate"]
+    environment: *local-db
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

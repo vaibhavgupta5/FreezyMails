@@ -352,3 +352,36 @@ npx tsx --env-file=.env src/workers/index.ts
 ## License
 
 Distributed under the MIT License. See `LICENSE` for details.
+
+## Development workflow
+
+```bash
+npm ci                 # also installs the git hooks (husky)
+npm run dev            # http://localhost:3000
+npm run worker         # pg-boss worker (sending, IMAP and Gmail sync)
+npm run check          # lint + typecheck + tests, the same as CI
+```
+
+Git hooks (husky):
+
+| Hook | Runs |
+|---|---|
+| pre-commit | `lint-staged` (eslint on staged files, `prisma format` on the schema) |
+| commit-msg | `commitlint`, Conventional Commits (`feat:`, `fix:`, `chore:` ...) |
+| pre-push | `npm run typecheck && npm test` |
+
+CI (`.github/workflows/ci.yml`) runs on every push to `main` and every pull request: Prisma validate and format check, lint, typecheck, tests with coverage, `next build`, conventional-commit check on PRs, and Docker builds of both images with a health-check smoke test. `security.yml` runs `npm audit`, gitleaks and CodeQL weekly and on PRs. Dependabot keeps npm, Actions and Docker up to date.
+
+## Docker
+
+One `Dockerfile`, two targets: `web` (Next.js, port 3000) and `worker` (pg-boss worker).
+
+```bash
+cp .env.example .env            # fill in Supabase, Google, keys
+docker compose up --build       # web + worker against the DATABASE_URL in .env
+
+# or against a local Postgres whose schema is pushed automatically:
+docker compose -f docker-compose.yml -f docker-compose.localdb.yml up --build
+```
+
+`NEXT_PUBLIC_*` values are baked into the browser bundle at build time, so set them in `.env` before building. The web image exposes `/api/healthz`.

@@ -32,8 +32,25 @@ export const createClientServer = cache(async () => {
   )
 })
 
+// The app's User row is normally created at the OAuth callback. A session that predates it (or a
+// deleted row) would break every foreign key, so make sure it exists once per process per user.
+const knownUsers = new Set<string>()
+
 export const getUser = cache(async () => {
   const supabase = await createClientServer()
   const { data: { user } } = await supabase.auth.getUser()
+  if (user?.email && !knownUsers.has(user.id)) {
+    try {
+      const { default: prisma } = await import('@/lib/prisma')
+      await prisma.user.upsert({
+        where: { id: user.id },
+        update: {},
+        create: { id: user.id, email: user.email, name: user.user_metadata?.full_name ?? null, avatarUrl: user.user_metadata?.avatar_url ?? null },
+      })
+      knownUsers.add(user.id)
+    } catch (e) {
+      console.error('Could not ensure app user row:', (e as Error).message)
+    }
+  }
   return user
 })

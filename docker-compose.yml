@@ -1,0 +1,29 @@
+# Quick start:
+#   cp .env.example .env   (fill in Supabase, Google and keys)
+#   docker compose up --build
+#       -> web (3000) + worker, using the DATABASE_URL in .env (for example Supabase)
+#   docker compose -f docker-compose.yml -f docker-compose.localdb.yml up --build
+#       -> same, but against a local Postgres container whose schema is pushed automatically
+x-build-args: &build-args
+  NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+  NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+
+services:
+  web:
+    build:
+      context: .
+      target: web
+      args: *build-args
+    env_file: .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: worker
+      args: *build-args
+    env_file: .env
+    restart: unless-stopped

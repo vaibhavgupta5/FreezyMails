@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
+  // Liveness probe must work without Supabase configured or reachable.
+  if (request.nextUrl.pathname === '/api/healthz') return NextResponse.next()
+
   let supabaseResponse = NextResponse.next({
     request,
   })
