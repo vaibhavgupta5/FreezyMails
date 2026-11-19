@@ -40,7 +40,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
         where: { id: params.id },
         data
       })
-    } catch (_) {
+    } catch {
       // If item is a sent MailEvent, update its metadata
       const mailEvent = await prisma.mailEvent.findUnique({
         where: { id: params.id },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   AlertTriangle,
   Check,
@@ -94,28 +94,142 @@ export default function AddRecipientsModal({
   const [lastEdited, setLastEdited] = useState<{row: number, col: string} | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const requiredHeaders: string[] = ["email"];
-  const headerFallbacks: Record<string, string> = {};
+  const { requiredHeaders, headerFallbacks } = useMemo(() => {
+    const headers: string[] = ["email"];
+    const fallbacks: Record<string, string> = {};
 
-  if (Array.isArray(templateVariables)) {
-    templateVariables.forEach((v) => {
-      if (typeof v === "string") {
-        if (v !== "email" && !requiredHeaders.includes(v)) {
-          requiredHeaders.push(v);
+    if (Array.isArray(templateVariables)) {
+      templateVariables.forEach((v) => {
+        if (typeof v === "string") {
+          if (v !== "email" && !headers.includes(v)) {
+            headers.push(v);
+          }
+        } else if (typeof v === "object" && v !== null && "name" in v) {
+          const varObj = v as { name: string; fallback?: string };
+          if (varObj.name !== "email" && !headers.includes(varObj.name)) {
+            headers.push(varObj.name);
+          }
+          if (varObj.fallback) {
+            fallbacks[varObj.name] = varObj.fallback;
+          }
         }
-      } else if (typeof v === "object" && v !== null && "name" in v) {
-        const varObj = v as { name: string; fallback?: string };
-        if (varObj.name !== "email" && !requiredHeaders.includes(varObj.name)) {
-          requiredHeaders.push(varObj.name);
-        }
-        if (varObj.fallback) {
-          headerFallbacks[varObj.name] = varObj.fallback;
-        }
-      }
-    });
-  }
+      });
+    }
+    return { requiredHeaders: headers, headerFallbacks: fallbacks };
+  }, [templateVariables]);
 
   const [selectedAudienceListId, setSelectedAudienceListId] = useState<string>(importListId || "none");
+
+  const handleImportFromAudience = useCallback(
+    async (listId: string) => {
+      if (!listId || listId === "none") return;
+      setIsMappingDrawerOpen(true);
+      setIsFetchingList(true);
+      setImportCondition("all");
+      try {
+        const res = await fetch(`/api/lists/${listId}`);
+        if (!res.ok) throw new Error("Failed to load list");
+        const data = await res.json();
+        if (!data.contacts || data.contacts.length === 0) {
+          toast.error("Mailing list is empty");
+          setIsMappingDrawerOpen(false);
+          return;
+        }
+
+        setFetchedContacts(data.contacts);
+
+        const fieldsSet = new Set<string>();
+        fieldsSet.add("email");
+
+        data.contacts.forEach(
+          (contact: {
+            email?: string;
+            customFields?: Record<string, string>;
+          }) => {
+            if (contact.customFields) {
+              Object.keys(contact.customFields).forEach((k) => fieldsSet.add(k));
+            }
+          },
+        );
+        const extractedFields = Array.from(fieldsSet);
+        setAvailableListFields(extractedFields);
+
+        const initialMapping: Record<string, string> = {};
+        requiredHeaders.forEach((h) => {
+          const match = extractedFields.find(
+            (f) => f.toLowerCase() === h.toLowerCase(),
+          );
+          if (match) {
+            initialMapping[h] = match;
+          }
+        });
+        setFieldMapping(initialMapping);
+      } catch (_err: unknown) {
+        const err = _err as Error;
+        toast.error(err.message);
+        setIsMappingDrawerOpen(false);
+      } finally {
+        setIsFetchingList(false);
+      }
+    },
+    [requiredHeaders],
+  );
+
+  const validateData = useCallback(
+    (data: Record<string, string>[]) => {
+      setParsedRecipients(data);
+      const errors: Record<number, string[]> = {};
+      const seenEmails = new Set<string>();
+      let hasError = false;
+      let globalErr: string | null = null;
+
+      if (data.length === 0) {
+        globalErr = "No recipients found.";
+        hasError = true;
+      } else if (data.length > 50000) {
+        globalErr = "Maximum 50,000 recipients allowed at once.";
+        hasError = true;
+      }
+
+      data.forEach((row, i) => {
+        const rowErrors: string[] = [];
+        const email = row.email?.trim();
+
+        if (!email) {
+          rowErrors.push("Email is required");
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            rowErrors.push("Invalid email format");
+          } else if (seenEmails.has(email.toLowerCase())) {
+            rowErrors.push("Duplicate email in list");
+          } else {
+            seenEmails.add(email.toLowerCase());
+          }
+        }
+
+        requiredHeaders.forEach((header) => {
+          if (header.toLowerCase() !== "email") {
+            const val = row[header];
+            const hasFallback = !!headerFallbacks[header];
+            if ((!val || !val.trim()) && !hasFallback) {
+              rowErrors.push(`Missing required variable: ${header}`);
+            }
+          }
+        });
+
+        if (rowErrors.length > 0) {
+          errors[i] = rowErrors;
+          hasError = true;
+        }
+      });
+
+      setValidationErrors(errors);
+      setIsValid(!hasError);
+      setGlobalError(globalErr);
+    },
+    [requiredHeaders, headerFallbacks],
+  );
 
   useEffect(() => {
     if (importListId) {
@@ -146,7 +260,7 @@ export default function AddRecipientsModal({
     if (isOpen && importListId && audienceLists.length > 0) {
       handleImportFromAudience(importListId);
     }
-  }, [isOpen, importListId, audienceLists]);
+  }, [isOpen, importListId, audienceLists, handleImportFromAudience]);
 
   // Parsing logic
   useEffect(() => {
@@ -190,61 +304,7 @@ export default function AddRecipientsModal({
     });
 
     validateData(data);
-  }, [recipientsText, templateVariables]);
-
-  const validateData = (data: Record<string, string>[]) => {
-    setParsedRecipients(data);
-    const errors: Record<number, string[]> = {};
-    const seenEmails = new Set<string>();
-    let hasError = false;
-    let globalErr: string | null = null;
-
-    if (data.length === 0) {
-      globalErr = "No recipients found.";
-      hasError = true;
-    } else if (data.length > 50000) {
-      globalErr = "Maximum 50,000 recipients allowed at once.";
-      hasError = true;
-    }
-
-    data.forEach((row, i) => {
-      const rowErrors: string[] = [];
-      const email = row.email?.trim();
-
-      if (!email) {
-        rowErrors.push("Email is required");
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          rowErrors.push("Invalid email format");
-        } else if (seenEmails.has(email.toLowerCase())) {
-          rowErrors.push("Duplicate email in list");
-        } else {
-          seenEmails.add(email.toLowerCase());
-        }
-      }
-
-      requiredHeaders.forEach((header) => {
-        if (header.toLowerCase() !== "email") {
-          const val = row[header];
-          const hasFallback = !!headerFallbacks[header];
-          if ((!val || !val.trim()) && !hasFallback) {
-            rowErrors.push(`Missing required variable: ${header}`);
-          }
-        }
-      });
-
-      if (rowErrors.length > 0) {
-        errors[i] = rowErrors;
-        hasError = true;
-      }
-    });
-
-    setValidationErrors(errors);
-    setIsValid(!hasError);
-    setGlobalError(globalErr);
-  };
-
+  }, [recipientsText, requiredHeaders, validateData]);
 
   const getTableRows = () => {
     let lines = recipientsText.split("\n").filter((l) => l !== "");
@@ -347,58 +407,6 @@ export default function AddRecipientsModal({
         toast.error("Failed to parse CSV: " + error.message);
       },
     });
-  };
-
-  const handleImportFromAudience = async (listId: string) => {
-    if (!listId || listId === "none") return;
-    setIsMappingDrawerOpen(true);
-    setIsFetchingList(true);
-    setImportCondition("all");
-    try {
-      const res = await fetch(`/api/lists/${listId}`);
-      if (!res.ok) throw new Error("Failed to load list");
-      const data = await res.json();
-      if (!data.contacts || data.contacts.length === 0) {
-        toast.error("Mailing list is empty");
-        setIsMappingDrawerOpen(false);
-        return;
-      }
-
-      setFetchedContacts(data.contacts);
-
-      const fieldsSet = new Set<string>();
-      fieldsSet.add("email");
-
-      data.contacts.forEach(
-        (contact: {
-          email?: string;
-          customFields?: Record<string, string>;
-        }) => {
-          if (contact.customFields) {
-            Object.keys(contact.customFields).forEach((k) => fieldsSet.add(k));
-          }
-        },
-      );
-      const extractedFields = Array.from(fieldsSet);
-      setAvailableListFields(extractedFields);
-
-      const initialMapping: Record<string, string> = {};
-      requiredHeaders.forEach((h) => {
-        const match = extractedFields.find(
-          (f) => f.toLowerCase() === h.toLowerCase(),
-        );
-        if (match) {
-          initialMapping[h] = match;
-        }
-      });
-      setFieldMapping(initialMapping);
-    } catch (_err: unknown) {
-      const err = _err as Error;
-      toast.error(err.message);
-      setIsMappingDrawerOpen(false);
-    } finally {
-      setIsFetchingList(false);
-    }
   };
 
   const evaluateContact = (contact: { email?: string; customFields?: Record<string, string>; sentStatus?: string }) => {

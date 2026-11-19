@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { getUser } from '@/lib/supabase'
 import { pollReplies } from '@/lib/imap'
 
-export async function POST(request: Request) {
+export async function POST() {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

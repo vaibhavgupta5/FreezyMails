@@ -33,7 +33,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       try {
         const parsed = JSON.parse(template.variables);
         if (Array.isArray(parsed)) varsArr = parsed;
-      } catch (e) {}
+      } catch {
+        // Ignore JSON parse error
+      }
     }
 
     varsArr.forEach(v => {

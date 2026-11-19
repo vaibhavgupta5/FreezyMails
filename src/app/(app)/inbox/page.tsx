@@ -196,7 +196,7 @@ export default function InboxPage() {
   const syncMutation = useSyncImapMutation();
   const bulkMutation = useBulkActionMutation();
 
-  const replies = data?.replies ?? [];
+  const replies = useMemo(() => data?.replies ?? [], [data?.replies]);
   const total = data?.total ?? 0;
   const unreadCount = data?.unreadCount ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;

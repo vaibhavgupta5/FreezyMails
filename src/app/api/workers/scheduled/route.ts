@@ -4,7 +4,7 @@ import boss, { JOB_SEND_EMAIL } from '@/lib/queue'
 import { distributeJobs } from '@/lib/scheduling'
 
 // This endpoint is meant to be called by a cron job (e.g. Vercel Cron) every 5 minutes
-export async function POST(request: Request) {
+export async function POST() {
   // Optional: add basic auth or secret token check here
   // const authHeader = request.headers.get('authorization');
   // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

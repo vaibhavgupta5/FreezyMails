@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useMemo } from "react";
@@ -158,7 +158,7 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors },
   } = useForm<TemplateFormData>({
@@ -179,9 +179,9 @@ export default function TemplateForm({ initialData }: TemplateFormProps) {
         },
   });
 
-  const bodyValue = watch("body") || "";
-  const subjectValue = watch("subject") || "";
-  const attachments = watch("attachments") || [];
+  const bodyValue = useWatch({ control, name: "body" }) || "";
+  const subjectValue = useWatch({ control, name: "subject" }) || "";
+  const attachments = useWatch({ control, name: "attachments" }) || [];
 
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
   const ALLOWED_TYPES = [

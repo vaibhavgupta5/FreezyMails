@@ -49,7 +49,7 @@ export default function TemplateList({
       setTemplates(templates.filter((t) => t.id !== id));
       toast.success("Template deleted");
       router.refresh();
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete template");
     } finally {
       setDeletingId(null);

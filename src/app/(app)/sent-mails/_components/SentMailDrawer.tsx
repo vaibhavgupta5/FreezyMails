@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { X, Send, User, Calendar, FileText, Reply } from "lucide-react";
@@ -82,7 +82,9 @@ export default function SentMailDrawer({
           try {
             const parsed = JSON.parse(template.variables);
             if (Array.isArray(parsed)) varsArr = parsed;
-          } catch (e) {}
+          } catch {
+            // Ignore JSON parse error
+          }
         }
 
         varsArr.forEach((v) => {

@@ -9,12 +9,11 @@ import { Button } from '@/components/ui/button'
 import ConfirmPopup from '@/components/ui/ConfirmPopup'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-export default function CampaignActions({ id, status, name, dailyLimit }: { id: string, status: string, name?: string, dailyLimit?: number | null }) {
+export default function CampaignActions({ id, status }: { id: string, status: string, name?: string, dailyLimit?: number | null }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [] = useState(false)
 
   const handleSend = async () => {
     setLoading(true)

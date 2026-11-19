@@ -12,7 +12,11 @@ const colors = {
 };
 import tailwindcssAnimate from "tailwindcss-animate";
 
-export default {
+type TailwindConfig = Config & {
+  safelist?: (string | { pattern: RegExp; variants?: string[] })[];
+};
+
+const config: TailwindConfig = {
   darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -183,3 +187,5 @@ export default {
   ],
   plugins: [tailwindcssAnimate],
 };
+
+export default config;

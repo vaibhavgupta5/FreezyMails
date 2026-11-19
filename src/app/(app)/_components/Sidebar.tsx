@@ -17,7 +17,6 @@ import {
   Server,
   ChevronRight,
   Users,
-  Send,
   Compass,
   ChevronLeft,
 } from "lucide-react";
@@ -76,7 +75,7 @@ export default function Sidebar({ user }: { user: User }) {
       <div
         className={`${
           isCollapsed ? "w-20" : "w-64"
-        } skeu-sidebar h-[100dvh] transition-all duration-300 shrink-0 
+        } skeu-sidebar h-dvh transition-all duration-300 shrink-0 
         fixed md:relative inset-y-0 left-0 z-50 md:translate-x-0 ${
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -84,7 +83,7 @@ export default function Sidebar({ user }: { user: User }) {
         <Button
           variant="none"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-5 bg-bg-base border border-border-subtle rounded-full p-1 -skeu-raised hover:bg-bg-base text-text-muted transition-colors z-[100] cursor-pointer"
+          className="absolute -right-3 top-5 bg-bg-base border border-border-subtle rounded-full p-1 -skeu-raised hover:bg-bg-base text-text-muted transition-colors z-100 cursor-pointer"
         >
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </Button>
