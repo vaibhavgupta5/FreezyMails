@@ -353,6 +353,10 @@ npx tsx --env-file=.env src/workers/index.ts
 
 Distributed under the MIT License. See `LICENSE` for details.
 
+## Agentic job hunting
+
+FreezyMails ships an MCP server so Claude Code can find roles, draft outreach and track applications, with you approving every email. See [docs/AGENTIC.md](docs/AGENTIC.md).
+
 ## Development workflow
 
 ```bash
