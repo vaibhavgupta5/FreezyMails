@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   validate-and-test:
@@ -54,6 +53,9 @@ jobs:
     name: Build & Publish Container Images
     needs: validate-and-test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
