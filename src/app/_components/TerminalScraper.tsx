@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal, CheckCircle2, Search, AlertCircle } from "lucide-react";
+import { Terminal, CheckCircle2, Search, AlertCircle, ChevronRight } from "lucide-react";
 
 export default function TerminalScraper() {
   const [step, setStep] = useState(0);
@@ -44,7 +44,7 @@ export default function TerminalScraper() {
         
         {/* Step 0: Init */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-          <span className="text-success-text shrink-0">➜</span>
+          <ChevronRight size={16} className="text-success-text shrink-0 mt-0.5" />
           <span><span className="text-primary-base font-bold">job_queue</span> process --job <span className="text-text-primary font-bold">enrich_target</span> --url <span className="text-text-primary font-bold">stripe.com</span></span>
         </motion.div>
 
@@ -128,7 +128,7 @@ export default function TerminalScraper() {
               transition={{ repeat: Infinity, duration: 0.8 }}
               className="flex gap-3 mt-4"
             >
-              <span className="text-success-text">➜</span>
+              <ChevronRight size={16} className="text-success-text shrink-0 mt-0.5" />
               <span className="w-2 h-4 bg-text-primary"></span>
             </motion.div>
           )}

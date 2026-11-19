@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { useInboxStore } from "@/stores/useInboxStore";
 import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 export default function ReplyPage() {
   const params = useParams();
@@ -157,7 +158,7 @@ export default function ReplyPage() {
                 isLoading={aiGenerating}
                 className="flex items-center gap-2 text-sm px-4 py-2 bg-bg-subtle dark:bg-ice-900/40 text-ice-700 dark:text-ice-300 hover:bg-border-subtle dark:hover:bg-ice-800 transition-colors border border-border-subtle dark:border-ice-700 rounded -sm w-full sm:w-auto justify-center"
               >
-                ✨ Suggest AI Reply
+                <Sparkles size={16} /> Suggest AI Reply
               </Button>
 
               <Button

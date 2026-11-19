@@ -14,3 +14,6 @@ docker-compose*.yml
 npm-debug.log*
 README.md
 AGENTIC_PLAN.md
+.idea
+.vscode
+.vercel

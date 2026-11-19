@@ -67,12 +67,12 @@ graph TD
         State["State Management (Zustand & TanStack Query)"]
     end
 
-    subgraph API & Server Layer
+    subgraph API && Server Layer
         API["Next.js Route Handlers (/api/*)"]
         Auth["Supabase Auth (@supabase/ssr)"]
     end
 
-    subgraph Data & Queue Layer
+    subgraph Data && Queue Layer
         DB[("PostgreSQL Database")]
         Prisma["Prisma ORM 5.22"]
         Boss["pg-boss Async Queue"]
@@ -378,10 +378,7 @@ One `Dockerfile`, two targets: `web` (Next.js, port 3000) and `worker` (pg-boss 
 
 ```bash
 cp .env.example .env            # fill in Supabase, Google, keys
-docker compose up --build       # web + worker against the DATABASE_URL in .env
-
-# or against a local Postgres whose schema is pushed automatically:
-docker compose -f docker-compose.yml -f docker-compose.localdb.yml up --build
+docker compose up --build       # local Postgres + schema push + web + worker
 ```
 
 `NEXT_PUBLIC_*` values are baked into the browser bundle at build time, so set them in `.env` before building. The web image exposes `/api/healthz`.

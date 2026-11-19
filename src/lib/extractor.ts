@@ -118,7 +118,9 @@ export async function fetchAndScrapePage(
                 break;
               }
             }
-          } catch (e) {}
+          } catch {
+            // Ignore parse error
+          }
         });
 
         // Try title
@@ -154,7 +156,9 @@ export async function fetchAndScrapePage(
             break;
           }
         }
-      } catch (e) {}
+      } catch {
+        // Ignore parse error
+      }
     });
 
     // Check author meta
@@ -199,13 +203,15 @@ export async function fetchAndScrapePage(
             if (subDomain === targetDomain && !subLinks.includes(absoluteUrl)) {
               subLinks.push(absoluteUrl);
             }
-          } catch (e) {}
+          } catch {
+            // Ignore URL parse error
+          }
         }
       });
     }
 
     return { emails, companyName, personName, subLinks };
-  } catch (e) {
+  } catch {
     clearTimeout(timeoutId);
     return { emails, companyName, personName, subLinks };
   }
@@ -300,7 +306,7 @@ export function derivePersonNameFromEmail(email: string): string {
     if (parts.length === 1) return capitalize(parts[0]);
 
     return parts.map(p => capitalize(p)).join(" ");
-  } catch (e) {
+  } catch {
     return "";
   }
 }

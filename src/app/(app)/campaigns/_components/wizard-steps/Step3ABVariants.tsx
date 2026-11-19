@@ -1,4 +1,4 @@
-import { Trash2, Plus, Check, ChevronsUpDown, Search } from "lucide-react";
+import { Trash2, Plus, ChevronsUpDown, Search } from "lucide-react";
 import { useState } from "react";
 import { useCampaignStore } from "@/stores/useCampaignStore";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export default function Step3ABVariants({
 }: {
   templates: CampaignWizardTemplate[];
 }) {
-  const { step, setStep, templateId, templateVariants, setTemplateVariants } =
+  const { setStep, templateId, templateVariants, setTemplateVariants } =
     useCampaignStore();
 
   const [searchQuery, setSearchQuery] = useState("");

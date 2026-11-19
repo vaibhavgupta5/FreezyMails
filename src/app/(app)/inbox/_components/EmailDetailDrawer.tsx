@@ -191,7 +191,7 @@ export default function EmailDetailDrawer({
         links: linksArr,
         rawAttachments: atts,
       };
-    }, [reply?.id, reply?.body]);
+    }, [reply]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -217,7 +217,7 @@ export default function EmailDetailDrawer({
     e.target.value = "";
   }, []);
 
-  const onSend = async () => {
+  const onSend = useCallback(async () => {
     if (!reply) return;
     setSending(true);
     try {
@@ -238,7 +238,9 @@ export default function EmailDetailDrawer({
         try {
           const errData = await res.json();
           if (errData.error) errStr = errData.error;
-        } catch (_) {}
+        } catch {
+          // Ignore parsing error
+        }
         throw new Error(errStr);
       }
       const updated = await res.json();
@@ -268,9 +270,9 @@ export default function EmailDetailDrawer({
     } finally {
       setSending(false);
     }
-  };
+  }, [reply, responseText, responseSubject, replyAttachments, updateReply, onClose, router]);
 
-  const handleSuggestReply = async () => {
+  const handleSuggestReply = useCallback(async () => {
     if (!reply) return;
     setAiGenerating(true);
     setAiChips([]);
@@ -310,7 +312,7 @@ export default function EmailDetailDrawer({
     } finally {
       setAiGenerating(false);
     }
-  };
+  }, [reply]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -335,14 +337,14 @@ export default function EmailDetailDrawer({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [replyId, reply, responseText, sending, showSendAgainConfirm]);
+  }, [replyId, reply, responseText, sending, showSendAgainConfirm, onClose, onSend, handleSuggestReply]);
 
   // Mark as read when drawer opens using TanStack mutation
   useEffect(() => {
     if (reply && !reply.isRead && reply.type !== "SENT") {
       markAsReadMutation.mutate(reply.id);
     }
-  }, [reply?.id]);
+  }, [reply, markAsReadMutation]);
 
   if (replyId && !reply) {
     return (
@@ -841,7 +843,7 @@ export default function EmailDetailDrawer({
             </div>
           </div>
           <div className="text-right text-[10px] text-text-muted opacity-60">
-            ⌘↵ to send • Esc to close • ⌘G for AI
+            Ctrl/Cmd+Enter to send • Esc to close • Ctrl/Cmd+G for AI
           </div>
         </div>
       </div>

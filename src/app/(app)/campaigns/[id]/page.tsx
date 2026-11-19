@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Play,
   Pause,
-  Copy,
   RotateCcw,
   Beaker,
   ChevronDown,
@@ -117,8 +116,6 @@ export default function CampaignPage() {
       return d?.status === "SENDING" ? 5000 : false;
     },
   });
-
-  const isSending = data?.status === "SENDING";
 
   const { data: progress } = useQuery<CampaignProgress>({
     queryKey: ["campaign-progress", id],

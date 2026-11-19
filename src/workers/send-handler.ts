@@ -107,7 +107,9 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
           try {
             const parsed = JSON.parse(campaign.template.variables);
             if (Array.isArray(parsed)) varsArr = parsed;
-          } catch (e) {}
+          } catch {
+            // Ignore parse error
+          }
         }
         
         varsArr.forEach(v => {
@@ -136,7 +138,7 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       console.log(`Sending email to ${recipient.email} via ${account.provider}...`)
       const attachments = (campaign.template?.attachments as { filename: string; content: string; encoding?: string }[]) || []
       const sendResult = await sendEmail(account, recipient.email, renderedSubject, finalBody, pixelUrl, attachments)
-      console.log(`✅ Sent successfully to ${recipient.email}`)
+      console.log(`[SUCCESS] Sent successfully to ${recipient.email}`)
 
       // Update recipient and create event
       await prisma.$transaction([
@@ -208,7 +210,7 @@ export async function handleSendEmail(jobOrJobs: Job<SendEmailData> | Job<SendEm
       
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
-      console.error(`❌ Failed to send to recipient ${recipientId}:`, errorMessage)
+      console.error(`[ERROR] Failed to send to recipient ${recipientId}:`, errorMessage)
       
       const isBounce = errorMessage.includes('550') || errorMessage.includes('bounced') || errorMessage.includes('rejected')
       const newStatus = isBounce ? 'BOUNCED' : 'FAILED'

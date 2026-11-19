@@ -36,7 +36,7 @@ Instructions:
   
   try {
     return JSON.parse(text)
-  } catch (err) {
+  } catch {
     return { subject: 'Error', body: 'Failed to parse JSON from AI response.' }
   }
 }
@@ -55,7 +55,7 @@ Return ONLY a valid JSON array of strings, for example: ["subject 1", "subject 2
   
   try {
     return JSON.parse(text)
-  } catch (err) {
+  } catch {
     return [currentSubject]
   }
 }

@@ -44,7 +44,7 @@ export async function checkDomainHealth(domain: string, ipAddress?: string): Pro
         }
       }
       if (result.dkim.status === 'pass') break
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -81,7 +81,7 @@ export async function checkDomainHealth(domain: string, ipAddress?: string): Pro
           const mxIps = await dns.resolve4(sortedMx[0].exchange)
           if (mxIps.length > 0) ipsToCheck.push(mxIps[0])
         }
-      } catch (e) {
+      } catch {
         // Fallback to A record
         ipsToCheck = await dns.resolve4(domain)
       }
@@ -103,7 +103,7 @@ export async function checkDomainHealth(domain: string, ipAddress?: string): Pro
     } else {
       result.blacklist = { status: 'fail', message: 'Could not resolve domain to IP for blacklist check' }
     }
-  } catch (e) {
+  } catch {
     // Ignore general errors for blacklist check
   }
 

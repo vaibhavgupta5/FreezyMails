@@ -53,7 +53,6 @@ export default function Step2Recipients({
   audienceLists: { id: string; name: string }[];
 }) {
   const {
-    step,
     setStep,
     inputMode,
     setInputMode,

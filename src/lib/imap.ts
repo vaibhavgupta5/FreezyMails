@@ -232,7 +232,7 @@ export async function pollReplies(account: EmailAccount) {
                   .trim()
                   .toLowerCase();
                 return renderedSubj === cleanReplySubject;
-              } catch (err) {
+              } catch {
                 return subj.trim().toLowerCase() === cleanReplySubject;
               }
             });

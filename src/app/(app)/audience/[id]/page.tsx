@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   Plus,
   ArrowLeft,
@@ -17,8 +17,6 @@ import {
   Globe,
   Check,
   Loader2,
-  MoreVertical,
-  Settings,
   Mail,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -94,7 +92,6 @@ type ExtractedWebRow = {
 
 export default function AudienceDetailPage() {
   const { id } = useParams() as { id: string };
-  const router = useRouter();
 
   const [listName, setListName] = useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -214,46 +211,49 @@ export default function AudienceDetailPage() {
   const isClientGeneratedId = (id: string) =>
     String(id).startsWith("new-") || String(id).startsWith("web-");
 
-  const batchSave = async (currentContacts: Contact[]) => {
-    if (saving) return;
-    setSaving(true);
+  const batchSave = useCallback(
+    async (currentContacts: Contact[]) => {
+      if (saving) return;
+      setSaving(true);
 
-    // Only send rows that were changed or are brand-new (not yet in DB)
-    const validContacts = currentContacts.filter(
-      (c) =>
-        c.email.trim() !== "" &&
-        (dirtyIds.current.has(c.id) || isClientGeneratedId(c.id))
-    );
+      // Only send rows that were changed or are brand-new (not yet in DB)
+      const validContacts = currentContacts.filter(
+        (c) =>
+          c.email.trim() !== "" &&
+          (dirtyIds.current.has(c.id) || isClientGeneratedId(c.id))
+      );
 
-    if (validContacts.length === 0) {
-      setIsDirty(false);
-      setSaving(false);
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/lists/${id}/contacts/batch`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contacts: validContacts }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to save changes");
+      if (validContacts.length === 0) {
+        setIsDirty(false);
+        setSaving(false);
+        return;
       }
 
-      toast.success("Changes saved");
-      dirtyIds.current.clear();
-      setIsDirty(false);
+      try {
+        const res = await fetch(`/api/lists/${id}/contacts/batch`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contacts: validContacts }),
+        });
 
-      // Re-fetch to replace client-generated IDs with real DB IDs
-      refetchList();
-    } catch (error) {
-      toast.error("Failed to save. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+        if (!res.ok) {
+          throw new Error("Failed to save changes");
+        }
+
+        toast.success("Changes saved");
+        dirtyIds.current.clear();
+        setIsDirty(false);
+
+        // Re-fetch to replace client-generated IDs with real DB IDs
+        refetchList();
+      } catch {
+        toast.error("Failed to save. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [id, saving, refetchList]
+  );
 
   // Auto-save effect
   useEffect(() => {
@@ -261,13 +261,13 @@ export default function AudienceDetailPage() {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
         batchSave(contacts);
-      }, 20000); // Save every 30 seconds
+      }, 20000); // Save every 20 seconds
     }
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [contacts, isDirty]);
+  }, [contacts, isDirty, batchSave]);
 
   const handleCellChange = (
     contactId: string,
@@ -331,8 +331,9 @@ export default function AudienceDetailPage() {
     setColumns((prev) => prev.filter((c) => c !== colName));
     setContacts((prev) =>
       prev.map((c) => {
-        const { [colName]: _removed, ...rest } = c.customFields ?? {};
-        return { ...c, customFields: rest };
+        const nextFields = { ...(c.customFields ?? {}) };
+        delete nextFields[colName];
+        return { ...c, customFields: nextFields };
       }),
     );
     setIsDirty(true);
@@ -344,6 +345,7 @@ export default function AudienceDetailPage() {
 
     const target = deleteConfirmTarget;
     setDeleteConfirmTarget(null);
+    setDeleting(true);
 
     try {
       if (target.type === "single") {
@@ -391,6 +393,8 @@ export default function AudienceDetailPage() {
     } catch (_err: unknown) {
       const err = _err as Error;
       toast.error(err.message || "Error deleting contact(s)");
+    } finally {
+      setDeleting(false);
     }
   };
   const openHistory = async (email: string) => {
@@ -406,7 +410,7 @@ export default function AudienceDetailPage() {
       if (!res.ok) throw new Error("Failed to load history");
       const data = await res.json();
       setHistoryData(data.history || []);
-    } catch (err) {
+    } catch {
       toast.error("Error loading campaign history");
     } finally {
       setLoadingHistory(false);
@@ -587,7 +591,7 @@ export default function AudienceDetailPage() {
 
   if (loading)
     return (
-      <div className="skeu-page h-[100dvh] w-full flex flex-col p-6 space-y-6">
+      <div className="skeu-page h-dvh w-full flex flex-col p-6 space-y-6">
         {/* Header Skeleton */}
         <div className="flex justify-between items-center pb-4 border-b border-border-subtle">
           <div className="space-y-2">
@@ -716,7 +720,7 @@ export default function AudienceDetailPage() {
 
   return (
     <TooltipProvider>
-      <div className="skeu-page h-[100dvh] overflow-y-auto w-full flex flex-col">
+      <div className="skeu-page h-dvh overflow-y-auto w-full flex flex-col">
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-4 w-full flex-1 flex flex-col">
           {/* Top Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-subtle pb-4 shrink-0">
@@ -776,7 +780,7 @@ export default function AudienceDetailPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-bg-base p-2.5 rounded-lg border border-border-subtle shrink-0">
             {/* Left: Search + Faceted Filters */}
             <div className="flex flex-wrap items-center gap-2 flex-1">
-              <div className="relative min-w-[220px] max-w-sm flex-1">
+              <div className="relative min-w-55 max-w-sm flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
                 <Input
                   placeholder={
@@ -973,7 +977,7 @@ export default function AudienceDetailPage() {
               <Table>
                 <TableHeader className="bg-bg-base/80 border-b border-border-subtle sticky top-0 z-10">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[38px] border-r border-border-subtle text-center py-2.5 px-2">
+                    <TableHead className="w-9.5 border-r border-border-subtle text-center py-2.5 px-2">
                       <input
                         type="checkbox"
                         className="h-3.5 w-3.5 rounded border-border-subtle text-primary-base focus:ring-1 cursor-pointer accent-primary-base"
@@ -1000,19 +1004,19 @@ export default function AudienceDetailPage() {
                         }}
                       />
                     </TableHead>
-                    <TableHead className="w-[48px] border-r border-border-subtle text-center font-mono text-xs text-text-muted font-medium py-2.5">
+                    <TableHead className="w-12 border-r border-border-subtle text-center font-mono text-xs text-text-muted font-medium py-2.5">
                       #
                     </TableHead>
-                    <TableHead className="min-w-[240px] px-4 border-r border-border-subtle text-xs font-semibold text-text-primary py-2.5">
+                    <TableHead className="min-w-60 px-4 border-r border-border-subtle text-xs font-semibold text-text-primary py-2.5">
                       Email Address
                     </TableHead>
-                    <TableHead className="min-w-[130px] border-r border-border-subtle text-xs font-semibold text-text-primary py-2.5 text-center">
+                    <TableHead className="min-w-32.5 border-r border-border-subtle text-xs font-semibold text-text-primary py-2.5 text-center">
                       Sent Status
                     </TableHead>
                     {columns.map((col) => (
                       <TableHead
                         key={col}
-                        className="border-r border-border-subtle text-xs font-semibold text-text-primary py-2.5 min-w-[160px] group/col"
+                        className="border-r border-border-subtle text-xs font-semibold text-text-primary py-2.5 min-w-40 group/col"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span>{col}</span>
@@ -1026,7 +1030,7 @@ export default function AudienceDetailPage() {
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="w-[60px] text-right py-2.5"></TableHead>
+                    <TableHead className="w-15 text-right py-2.5"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1050,7 +1054,7 @@ export default function AudienceDetailPage() {
                           className={`hover:bg-bg-base/50 transition-colors group ${contact.isNew ? "bg-bg-base/30 font-medium" : ""}`}
                         >
                           {/* Checkbox Cell */}
-                          <TableCell className="text-center border-r border-b border-border-subtle p-0 w-[38px] select-none bg-bg-base/40">
+                          <TableCell className="text-center border-r border-b border-border-subtle p-0 w-9.5 select-none bg-bg-base/40">
                             <div className="flex items-center justify-center h-9">
                               {!contact.isNew && (
                                 <input
@@ -1077,7 +1081,7 @@ export default function AudienceDetailPage() {
                           </TableCell>
 
                           {/* Numbering Cell */}
-                          <TableCell className="text-center border-r border-b border-border-subtle text-text-muted font-mono text-xs p-0 w-[48px] select-none bg-bg-base/40">
+                          <TableCell className="text-center border-r border-b border-border-subtle text-text-muted font-mono text-xs p-0 w-12 select-none bg-bg-base/40">
                             <div className="flex items-center justify-center h-9">
                               {rowNumber}
                             </div>
@@ -1104,7 +1108,7 @@ export default function AudienceDetailPage() {
                           </TableCell>
 
                           {/* Sent Status Cell */}
-                          <TableCell className="text-center p-0 border-r border-b border-border-subtle w-[110px] select-none align-middle">
+                          <TableCell className="text-center p-0 border-r border-b border-border-subtle w-27.5 select-none align-middle">
                             <div className="flex items-center justify-center h-9">
                               {!contact.isNew && contact.email && (
                                 <Tooltip>
@@ -1117,9 +1121,9 @@ export default function AudienceDetailPage() {
                                           : contact.sentStatus === "PENDING"
                                             ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
                                             : contact.sentStatus === "BOUNCED"
-                                              ? "bg-danger-bg text-danger-text text-danger-text"
+                                              ? "bg-danger-bg text-danger-text"
                                               : contact.sentStatus === "FAILED"
-                                                ? "bg-danger-bg text-danger-text text-danger-text"
+                                                ? "bg-danger-bg text-danger-text"
                                                 : "bg-bg-subtle text-text-muted"
                                       }`}
                                     >
@@ -1158,7 +1162,7 @@ export default function AudienceDetailPage() {
                           ))}
 
                           {/* Actions Cell */}
-                          <TableCell className="text-center !px-2 border-b border-border-subtle p-0">
+                          <TableCell className="text-center px-2! border-b border-border-subtle p-0">
                             {(!contact.isNew || contact.email !== "") && (
                               <div className="flex justify-center items-center h-9 opacity-50 group-hover:opacity-100 transition-opacity">
                                 <Tooltip>
@@ -1220,7 +1224,7 @@ export default function AudienceDetailPage() {
                       setCurrentPage(1);
                     }}
                   >
-                    <SelectTrigger className="h-7 w-[64px] text-xs bg-bg-base border-border-subtle px-2">
+                    <SelectTrigger className="h-7 w-16 text-xs bg-bg-base border-border-subtle px-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1384,7 +1388,7 @@ export default function AudienceDetailPage() {
                           value={companyColMapping}
                           onValueChange={setCompanyColMapping}
                         >
-                          <SelectTrigger className="h-8 w-[220px] text-xs bg-bg-base border-border-subtle">
+                          <SelectTrigger className="h-8 w-55 text-xs bg-bg-base border-border-subtle">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1417,7 +1421,7 @@ export default function AudienceDetailPage() {
                           value={nameColMapping}
                           onValueChange={setNameColMapping}
                         >
-                          <SelectTrigger className="h-8 w-[220px] text-xs bg-bg-base border-border-subtle">
+                          <SelectTrigger className="h-8 w-55 text-xs bg-bg-base border-border-subtle">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1450,7 +1454,7 @@ export default function AudienceDetailPage() {
                           value={urlColMapping}
                           onValueChange={setUrlColMapping}
                         >
-                          <SelectTrigger className="h-8 w-[220px] text-xs bg-bg-base border-border-subtle">
+                          <SelectTrigger className="h-8 w-55 text-xs bg-bg-base border-border-subtle">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1560,7 +1564,7 @@ export default function AudienceDetailPage() {
                               <TableCell className="text-xs">
                                 {row.personName || "-"}
                               </TableCell>
-                              <TableCell className="text-xs text-text-muted truncate max-w-[150px]">
+                              <TableCell className="text-xs text-text-muted truncate max-w-37.5">
                                 {row.url}
                               </TableCell>
                             </TableRow>
@@ -1659,7 +1663,7 @@ export default function AudienceDetailPage() {
                 <div className="relative border-l border-border-subtle ml-2 pl-4 space-y-6 animate-pulse">
                   {[1, 2].map((i) => (
                     <div key={i} className="relative">
-                      <div className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-bg-base bg-border-subtle"></div>
+                      <div className="absolute -left-5.25 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-bg-base bg-border-subtle"></div>
                       <div className="bg-bg-base/50 border border-border-subtle rounded-lg p-3 space-y-2">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1.5">
@@ -1698,7 +1702,7 @@ export default function AudienceDetailPage() {
                     }) => (
                       <div key={rec.id} className="relative">
                         <div
-                          className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-bg-base ${rec.status === "SENT" ? "bg-green-500" : rec.status === "PENDING" ? "bg-yellow-500" : "bg-red-500"}`}
+                          className={`absolute -left-5.25 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-bg-base ${rec.status === "SENT" ? "bg-green-500" : rec.status === "PENDING" ? "bg-yellow-500" : "bg-red-500"}`}
                         ></div>
                         <div className="bg-bg-base/50 border border-border-subtle rounded-lg p-3 space-y-2">
                           <div className="flex justify-between items-start">
@@ -1718,7 +1722,7 @@ export default function AudienceDetailPage() {
                                   ? "bg-green-500/10 text-green-600 dark:text-green-400"
                                   : rec.status === "PENDING"
                                     ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-                                    : "bg-danger-bg text-danger-text text-danger-text"
+                                    : "bg-danger-bg text-danger-text"
                               }`}
                             >
                               {rec.status}

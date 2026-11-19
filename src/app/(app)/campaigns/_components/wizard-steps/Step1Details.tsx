@@ -97,7 +97,7 @@ export default function Step1Details({
                     }`}
                   >
                     {isSelected && (
-                      <span className="text-[10px] font-bold">✓</span>
+                      <Check size={10} strokeWidth={3} />
                     )}
                   </div>
                 </button>
