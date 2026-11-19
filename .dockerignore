@@ -1,0 +1,16 @@
+Dockerfile*
+docker-compose*
+.dockerignore
+node_modules
+.next
+.git
+.github
+.idea
+.vscode
+*.md
+.env*
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vercel
